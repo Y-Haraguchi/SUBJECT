@@ -47,7 +47,7 @@ public class Calculate_Sales_Main {
 				*正規表現を用いてチェックし不正だったら処理を終了させる
 				*/
 				if(!(branchstr.length == 2) || !(branchstr[0].matches("^\\d{3}$"))){
-					System.out.println("ファイルフォーマットが不正です");
+					System.out.println("支店定義ファイルのフォーマットが不正です");
 					br1.close();
 					System.out.println(branchstr[0].matches("\\d{3}$"));
 					System.out.println(branchstr.length);
@@ -98,7 +98,7 @@ public class Calculate_Sales_Main {
 				*正規表現を用いてチェックし不正だったら処理を終了させる
 				*/
 				if(!(commodstr.length == 2) || !(commodstr[0].matches("^[0-9].*[a-zA-Z]|[a-zA-Z].*[0-9].\\d{3}$"))){
-					System.out.println("ファイルフォーマットが不正です");
+					System.out.println("商品定義ファイルのフォーマットが不正です");
 					br2.close();
 					System.out.println(commodstr[0].matches("\\d{3}$"));
 					System.out.println(commodstr.length);

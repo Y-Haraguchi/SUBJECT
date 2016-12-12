@@ -1,10 +1,13 @@
 package jp.co.iccom.haraguchi_yugi.calculate_sales;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -55,6 +58,7 @@ public class Calculate_Sales_Main {
 					return;
 				}
 				branchMap.put(branchstr[0], branchstr[1]);
+
 			}
 			//デバッグ出力
 			System.out.println("支店定義ファイルが正常に読み込まれました");
@@ -130,17 +134,27 @@ public class Calculate_Sales_Main {
 			//ファイル内のデータを格納するためのArrayListを生成
 			ArrayList<String> salesList = new ArrayList<String>();
 
+			//売上ファイル内の値段を支店コードと紐付けるためのHashMapを生成
+			HashMap<String, Integer> branchSalesMap = new HashMap<String, Integer>();
+
+			//売上ファイル内の値段を商品コードと紐付けるためのHashMapを生成
+			HashMap<String, Integer> commodSalesMap = new HashMap<String, Integer>();
+
 			//一行ずつ読み込むための一時格納変数
 			String salesLine;
 
-			//繰り替えして
+			//繰り替えしてファイルを読み込み
 			for(int i = 0 ; i < fileList.length ; i++){
+
 				//「.rcd」の拡張子の場合のみif文の中を実行
 				if(fileList[i].matches("^.*.rcd.*$")){
+
 					//連番チェックの為、「.」で文字列を分割する
 					String[] divstr = fileList[i].split("\\.");
+
 					//連番チェックの為、divstr[0]番に入っている分割した文字列の数字をint型に変換
 					int fileNameNum = Integer.parseInt(divstr[0]);
+
 					//if文で連番チェック→fileNameNumとカウンターの「i」の差が「1」以外は処理を終了させる
 					if(!((fileNameNum - i) == 1)){
 						System.out.println("ファイルが連番になっていません");
@@ -151,33 +165,142 @@ public class Calculate_Sales_Main {
 				}
 				//ファイルパス指定して1ファイルずつ読み込み
 				File salesFile = new File(args[2],fileList[i]);
-				//読み込み範囲拡張しが「.rcd」のファイルだけ読み込み
+
+				//読み込み範囲は拡張子が「.rcd」のファイルだけ読み込み
 				if(!fileList[i].matches("^.*lst.*$")){
+
 					//売上ファイルの読み込み処理
 					FileReader salesFr = new FileReader(salesFile);
 					BufferedReader salesBr = new BufferedReader(salesFr);
 
+					//1ファイル内のデータをすべてaddしていく
 					while((salesLine = salesBr.readLine()) != null){
-						//ArrayListに追加処理
 						salesList.add(salesLine);
-						//
-
 					}
 					//salesBrをクローズ
 					salesBr.close();
 
+					//要素数のチェック→要素数が3以外はエラーを返す
+					if(!(salesList.size() == 3)){
+						System.out.println("<" + fileList[i] + ">のファイルフォーマットが不正です" );
+						return;
+					}
+
+
+					//ここでHashMapでコードと値を登録する→登録する値は「0」
+
+					//それぞれのマップの値をインクリメントする
+
+					System.out.println("キーは一致してる？①　" + branchSalesMap.containsKey(salesList.get(0)));
+
+					//支店コードチェックを行う
+					if(!(salesList.get(0).matches("^\\d{3}$"))){
+						System.out.println("<" + fileList[i] + ">の支店コードが不正です");
+						return;
+					//商品コードのチェックを行う
+					}
+					//addした要素を「支店コードと金額」と設定されたHashMapにセットしていく
+					//2週目のループ以降にすでに登録されていたらelseifの処理を行う
+					if(branchSalesMap.get(salesList.get(0)) == null || !branchSalesMap.containsKey(salesList.get(0))){
+						branchSalesMap.put(salesList.get(0), Integer.parseInt(salesList.get(2)));
+						//デバッグ表示
+						System.out.println("キーは一致してる？　" + branchSalesMap.containsKey(salesList.get(0)));
+
+					//キーが一致していたら、対応するコードのvalueに加算していく
+					}else if(branchSalesMap.containsKey(salesList.get(0))){
+						int buffValue = branchSalesMap.get(salesList.get(0));							//一時格納変数
+						int sumValue = 0;				//現ループの合計を格納する変数
+
+						//新しい値をput
+						branchSalesMap.put(salesList.get(0), Integer.parseInt(salesList.get(2)));
+
+						sumValue = buffValue + branchSalesMap.get(salesList.get(0));
+
+						//加算した値をputして登録
+						branchSalesMap.put(salesList.get(0), sumValue);
+
+						//合計金額が10桁以上の場合エラーを返して処理を終了させる
+						if(salesList.get(0).matches("^\\d{10,}$")){
+							System.out.println("合計金額が10桁を超えました");
+							return;
+						}
+					}
 					//デバッグ表示
+					System.out.println( branchSalesMap.entrySet());
+					System.out.println( salesList.get(1));
+
+					//商品コードが不正の場合、エラーメッセージ後に処理を終了
+					if(!salesList.get(1).matches("^[0-9].*[a-zA-Z]|[a-zA-Z].*[0-9].\\d{3}$")){
+						System.out.println("<" + fileList[i] + ">の商品コードが不正です");
+						return;
+					}
+					//addした要素を「商品コードと金額」と設定されたHashMapにセットしていく
+					//2週目のループ以降にすでに登録されていたらelseifの処理を行う
+					if(commodSalesMap.get(salesList.get(1)) == null || !commodSalesMap.containsKey(salesList.get(1))){
+						commodSalesMap.put(salesList.get(1), Integer.parseInt(salesList.get(2)));
+						//デバッグ表示
+						System.out.println("キーは一致してる？　" + commodSalesMap.containsKey(salesList.get(1)));
+
+					//キーが一致していたら、対応するコードのvalueに加算していく
+					}else if(commodSalesMap.containsKey(salesList.get(1))){
+						int buffValue = commodSalesMap.get(salesList.get(1));							//一時格納変数
+						int sumValue = 0;				//現ループの合計を格納する変数
+
+						//新しい値をput
+						commodSalesMap.put(salesList.get(1), Integer.parseInt(salesList.get(2)));
+
+						sumValue = buffValue + commodSalesMap.get(salesList.get(1));
+
+						//加算した値をputして登録
+						commodSalesMap.put(salesList.get(1), sumValue);
+
+						//合計金額が10桁以上の場合エラーを返して処理を終了させる
+						if(salesList.get(1).matches("^\\d{10,}$")){
+							System.out.println("合計金額が10桁を超えました");
+							return;
+						}
+					}
+
+					//デバッグ表示
+					System.out.println( commodSalesMap.entrySet());
+
+
+					//要素内をクリア
+					salesList.clear();
+
 					System.out.println(salesFile);
 					System.out.println("=============================================");
 				}
 			}
-			//デバッグ表示
-			System.out.println(salesList.get(0));
-			System.out.println(salesList.get(1));
-			System.out.println(salesList.get(2));
-			System.out.println(salesList.get(3));
-			System.out.println(salesList.get(4));
-			System.out.println(salesList.get(5));
+
+
+
+
+			//---------------------------------------------------------------------------------
+			//集計結果をソート処理
+			//---------------------------------------------------------------------------------
+			//ソート処理は以下のページを参考に
+			//http://papiroidsensei.com/memo/java_map_sort.html
+
+
+
+			//---------------------------------------------------------------------------------
+			//集計結果を出力
+			//---------------------------------------------------------------------------------
+
+			//outPut先の拡張子を設定
+			File branchOutfile = new File(args[2],"branch.out");
+			FileWriter branchOutfw = new FileWriter(branchOutfile);
+			BufferedWriter branchOutbw = new BufferedWriter(branchOutfw);
+			PrintWriter branchOutpw = new PrintWriter(branchOutbw);
+
+			//デバッグ出力
+			//branchOutpw.format("");
+
+
+
+			branchOutpw.close();
+
 		}
 		catch(FileNotFoundException e){
 			e.printStackTrace();

@@ -187,18 +187,31 @@ public class Calculate_Sales_Main {
 					}
 
 
-					//ここでHashMapでコードと値を登録する→登録する値は「0」
+					//支店売り上げと商品売り上げのキーを格納
+					for(int j = 0 ; j < salesList.size() ; j++){
+						//支店コードチェックを行う
+						if(!(salesList.get(0).matches("^\\d{3}$"))){
+							System.out.println("<" + fileList[i] + ">の支店コードが不正です");
+							return;
+						//商品コードのチェックを行う
+						}
+						//支店売り上げ格納用のマップに支店コードをキーとして格納値は「0」
+						branchSalesMap.put(salesList.get(0), 0);
+
+
+						//商品コードが不正の場合、エラーメッセージ後に処理を終了
+						if(!salesList.get(1).matches("^[0-9].*[a-zA-Z]|[a-zA-Z].*[0-9].\\d{3}$")){
+							System.out.println("<" + fileList[i] + ">の商品コードが不正です");
+							return;
+						}
+						//商品売り上げ格納用のマップに商品コードをキーとして格納値は「0」
+						commodSalesMap.put(salesList.get(1), 0);
+					}
 
 					//それぞれのマップの値をインクリメントする
 
 					System.out.println("キーは一致してる？①　" + branchSalesMap.containsKey(salesList.get(0)));
 
-					//支店コードチェックを行う
-					if(!(salesList.get(0).matches("^\\d{3}$"))){
-						System.out.println("<" + fileList[i] + ">の支店コードが不正です");
-						return;
-					//商品コードのチェックを行う
-					}
 					//addした要素を「支店コードと金額」と設定されたHashMapにセットしていく
 					//2週目のループ以降にすでに登録されていたらelseifの処理を行う
 					if(branchSalesMap.get(salesList.get(0)) == null || !branchSalesMap.containsKey(salesList.get(0))){
@@ -229,11 +242,6 @@ public class Calculate_Sales_Main {
 					System.out.println( branchSalesMap.entrySet());
 					System.out.println( salesList.get(1));
 
-					//商品コードが不正の場合、エラーメッセージ後に処理を終了
-					if(!salesList.get(1).matches("^[0-9].*[a-zA-Z]|[a-zA-Z].*[0-9].\\d{3}$")){
-						System.out.println("<" + fileList[i] + ">の商品コードが不正です");
-						return;
-					}
 					//addした要素を「商品コードと金額」と設定されたHashMapにセットしていく
 					//2週目のループ以降にすでに登録されていたらelseifの処理を行う
 					if(commodSalesMap.get(salesList.get(1)) == null || !commodSalesMap.containsKey(salesList.get(1))){

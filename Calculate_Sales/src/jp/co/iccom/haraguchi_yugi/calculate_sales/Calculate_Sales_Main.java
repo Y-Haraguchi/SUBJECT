@@ -217,10 +217,9 @@ public class Calculate_Sales_Main {
 			//支店売上金額のソート用のListを生成
 			List<Map.Entry<String, Long>> branchSortEntries = new ArrayList<Map.Entry<String, Long>>(branchSalesMap.entrySet());
 			Collections.sort(branchSortEntries, new Comparator<Map.Entry<String,Long>>() {
-				 //オーバーライド
-				@Override		//アノテーション
-	            public int compare(
-	                  Entry<String,Long> entry1, Entry<String,Long> entry2) {
+			//オーバーライド@Override		//アノテーション
+				public int compare(
+						Entry<String,Long> entry1, Entry<String,Long> entry2) {
 	                return ((Long)entry2.getValue()).compareTo((Long)entry1.getValue());
 	            }
 	        });
@@ -229,8 +228,7 @@ public class Calculate_Sales_Main {
 			Collections.sort(commodSortEntries, new Comparator<Map.Entry<String,Long>>() {
 				 //オーバーライド
 				@Override		//アノテーション
-	            public int compare(
-	                  Entry<String,Long> entry1, Entry<String,Long> entry2) {
+	            public int compare(Entry<String,Long> entry1, Entry<String,Long> entry2) {
 	                return ((Long)entry2.getValue()).compareTo((Long)entry1.getValue());
 	            }
 	        });

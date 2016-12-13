@@ -3,8 +3,10 @@ package jp.co.iccom.haraguchi_yugi.calculate_sales;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -28,45 +30,51 @@ public class CalculateSales {
 			FileReader branchFr = new FileReader(branchFile);
 			BufferedReader blanchBr = new BufferedReader(branchFr);
 
-			//エラーチェック→ディレクトリを見に行った際に「branch.lst」がなかったら処理を終了させる
-			if(!branchFile.exists()){
-				System.out.println("支店定義ファイルが存在しません");
-				blanchBr.close();
-				return;
-			}
-
-			//支店定義ファイルを読み込んでMapに値を保持
-			HashMap<String,String> branchMap = new HashMap<String,String>();
-
-			//売上ファイル内の値段を支店コードと紐付けるためのHashMapを生成
-			HashMap<String, Long> branchSalesMap = new HashMap<String, Long>();
-
-			//一行ずつ読み込むための一時格納変数
-			String branchLine;
-
-			/*繰り返しの処理で一行ずつ読み込み、，を基準にsplitで文字分割を行い、
-			* splitで保持されたデータをHashMapのキーと値に設定する
-			* 読込先がnullなったらループを抜ける処理
-			*/
-
-			while((branchLine = blanchBr.readLine()) != null){
-				String[] branchstr = branchLine.split(",");
-				/*エラーチェック→ファイルフォーマットが不正か
-				*正規表現を用いてチェックし不正だったら処理を終了させる
-				*/
-				if(!(branchstr.length == 2) || !(branchstr[0].matches("^\\d{3}$"))){
-					System.out.println("支店定義ファイルのフォーマットが不正です");
+			try{
+				//エラーチェック→ディレクトリを見に行った際に「branch.lst」がなかったら処理を終了させる
+				if(!branchFile.exists()){
+					System.out.println("支店定義ファイルが存在しません");
 					blanchBr.close();
 					return;
 				}
-				//定義ファイル内のデータをセット
-				branchMap.put(branchstr[0], branchstr[1]);
 
-				//集計に使用するHashMapを生成
-				branchSalesMap.put(branchstr[0], (long)0);
+				//支店定義ファイルを読み込んでMapに値を保持
+				HashMap<String,String> branchMap = new HashMap<String,String>();
 
+				//売上ファイル内の値段を支店コードと紐付けるためのHashMapを生成
+				HashMap<String, Long> branchSalesMap = new HashMap<String, Long>();
+
+				//一行ずつ読み込むための一時格納変数
+				String branchLine;
+
+				/*繰り返しの処理で一行ずつ読み込み、，を基準にsplitで文字分割を行い、
+				* splitで保持されたデータをHashMapのキーと値に設定する
+				* 読込先がnullなったらループを抜ける処理
+				*/
+
+				while((branchLine = blanchBr.readLine()) != null){
+					String[] branchstr = branchLine.split(",");
+					/*エラーチェック→ファイルフォーマットが不正か
+					*正規表現を用いてチェックし不正だったら処理を終了させる
+					*/
+					if(!(branchstr.length == 2) || !(branchstr[0].matches("^\\d{3}$"))){
+						System.out.println("支店定義ファイルのフォーマットが不正です");
+						//blanchBr.close();
+						return;
+					}
+					//定義ファイル内のデータをセット
+					branchMap.put(branchstr[0], branchstr[1]);
+
+					//集計に使用するHashMapを生成
+					branchSalesMap.put(branchstr[0], (long)0);
+				}
+			}catch(FileNotFoundException e){
+				e.printStackTrace();
+			}catch(IOException e){
+				e.printStackTrace();
+			}finally{
+				blanchBr.close();
 			}
-			blanchBr.close();
 			//---------------------------------------------------------------------------------
 			//商品定義ファイルの読み込み及び保持
 			//---------------------------------------------------------------------------------
@@ -82,46 +90,53 @@ public class CalculateSales {
 			FileReader commodFr = new FileReader(commodFile);
 			BufferedReader commodBr = new BufferedReader(commodFr);
 
-			//支店定義ファイルを読み込んでMapに値を保持
-			HashMap<String,String> commodMap = new HashMap<String,String>();
+			try{
+				//支店定義ファイルを読み込んでMapに値を保持
+				HashMap<String,String> commodMap = new HashMap<String,String>();
 
-			//売上ファイル内の値段を商品コードと紐付けるためのHashMapを生成
-			HashMap<String, Long> commodSalesMap = new HashMap<String, Long>();
+				//売上ファイル内の値段を商品コードと紐付けるためのHashMapを生成
+				HashMap<String, Long> commodSalesMap = new HashMap<String, Long>();
 
 
-			//一行ずつ読み込むための一時格納変数
-			String commodLine;
+				//一行ずつ読み込むための一時格納変数
+				String commodLine;
 
-			/*繰り返しの処理で一行ずつ読み込み、，を基準にsplitで文字分割を行い、
-			* splitで保持されたデータをHashMapのキーと値に設定する
-			* 読込先がnullなったらループを抜ける処理
-			*/
-
-			while((commodLine = commodBr.readLine()) != null){
-				String[] commodstr = commodLine.split(",");
-
-				/*エラーチェック→ファイルフォーマットが不正か
-				*正規表現を用いてチェックし不正だったら処理を終了させる
+				/*繰り返しの処理で一行ずつ読み込み、，を基準にsplitで文字分割を行い、
+				* splitで保持されたデータをHashMapのキーと値に設定する
+				* 読込先がnullなったらループを抜ける処理
 				*/
-				if(!(commodstr.length == 2) || !(commodstr[0].matches("^[0-9].*[a-zA-Z]|[a-zA-Z].*[0-9].\\d{3}$"))){
-					System.out.println("商品定義ファイルのフォーマットが不正です");
-					commodBr.close();
-					return;
-				}
-				//定義ファイル内のデータを登録
-				commodMap.put(commodstr[0], commodstr[1]);
 
-				//集計に使用するマップの初期化
-				commodSalesMap.put(commodstr[0], (long)0);
+				while((commodLine = commodBr.readLine()) != null){
+					String[] commodstr = commodLine.split(",");
+
+					/*エラーチェック→ファイルフォーマットが不正か
+					*正規表現を用いてチェックし不正だったら処理を終了させる
+					*/
+					if(!(commodstr.length == 2) || !(commodstr[0].matches("^[0-9].*[a-zA-Z]|[a-zA-Z].*[0-9].\\d{3}$"))){
+						System.out.println("商品定義ファイルのフォーマットが不正です");
+						return;
+					}
+					//定義ファイル内のデータを登録
+					commodMap.put(commodstr[0], commodstr[1]);
+
+					//集計に使用するマップの初期化
+					commodSalesMap.put(commodstr[0], (long)0);
+				}
+			}catch(FileNotFoundException e){
+				e.printStackTrace();
+			}catch(IOException e){
+				e.printStackTrace();
+			}finally{
+				commodBr.close();
 			}
-			commodBr.close();
 			//---------------------------------------------------------------------------------
 			//売上ファイルの読み込み及び保持、計算を行う
 			//---------------------------------------------------------------------------------
-
-			//for文で連番ファイルを読み込む
+			//売上ファイルを読み込む
 			//フォルダのパスを指定
 			File dir = new File(args[0]);
+
+			//for文で連番ファイルを読み込む
 			//フォルダ内のファイル名取得→「00000001.rcd」の部分
 			String[] fileList = dir.list();
 
@@ -162,14 +177,13 @@ public class CalculateSales {
 					//1ファイル内のデータをすべてaddしていく
 					while((salesLine = salesBr.readLine()) != null){
 						salesList.add(salesLine);
-
 					}
 					//salesBrをクローズ
 					salesBr.close();
 
 					//要素数のチェック→要素数が3以外はエラーを返す
 					if(fileList[i].matches("^.*.rcd.*$") && !(salesList.size() == 3)){
-						System.out.println("<" + fileList[i] + ">のファイルフォーマットが不正です" );
+						System.out.println(fileList[i] + "のファイルフォーマットが不正です" );
 						return;
 					}
 					/*すでに生成されている支店売上マップと商品売上マップと
@@ -178,7 +192,7 @@ public class CalculateSales {
 					 */
 					//支店コードチェックを行う
 					if(!(salesList.get(0).matches("^\\d{3}$"))){
-						System.out.println("<" + fileList[i] + ">の支店コードが不正です");
+						System.out.println(fileList[i] + "の支店コードが不正です");
 						return;
 					}
 					//支店コードに紐づく売上金を加算する処理

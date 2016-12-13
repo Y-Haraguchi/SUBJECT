@@ -15,7 +15,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 //メイン処理
-public class Calculatesales {
+public class CalculateSales {
 	public static void main(String[] args) {
 		try{
 			//---------------------------------------------------------------------------------

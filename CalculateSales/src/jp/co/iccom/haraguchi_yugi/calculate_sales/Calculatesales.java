@@ -15,14 +15,14 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 //メイン処理
-public class Calculate_Sales_Main {
+public class Calculatesales {
 	public static void main(String[] args) {
 		try{
 			//---------------------------------------------------------------------------------
 			//支店定義ファイルの読み込み及び保持
 			//---------------------------------------------------------------------------------
 			//ファイルパスを指定
-			File branchFile = new File(args[0]);
+			File branchFile = new File(args[0],"branch.lst");
 
 			//読み込み処理
 			FileReader branchFr = new FileReader(branchFile);
@@ -57,8 +57,6 @@ public class Calculate_Sales_Main {
 				if(!(branchstr.length == 2) || !(branchstr[0].matches("^\\d{3}$"))){
 					System.out.println("支店定義ファイルのフォーマットが不正です");
 					blanchBr.close();
-					System.out.println(branchstr[0].matches("\\d{3}$"));
-					System.out.println(branchstr.length);
 					return;
 				}
 				//定義ファイル内のデータをセット
@@ -73,7 +71,7 @@ public class Calculate_Sales_Main {
 			//商品定義ファイルの読み込み及び保持
 			//---------------------------------------------------------------------------------
 			//ファイルパスを指定
-			File commodFile = new File(args[1]);
+			File commodFile = new File(args[0],"commodity.lst");
 
 			//エラーチェック→ディレクトリを見に行った際に「commodity.lst」がなかったら処理を終了させる
 			if(!commodFile.exists()){
@@ -123,7 +121,7 @@ public class Calculate_Sales_Main {
 
 			//for文で連番ファイルを読み込む
 			//フォルダのパスを指定
-			File dir = new File(args[2]);
+			File dir = new File(args[0]);
 			//フォルダ内のファイル名取得→「00000001.rcd」の部分
 			String[] fileList = dir.list();
 
@@ -152,7 +150,7 @@ public class Calculate_Sales_Main {
 					}
 				}
 				//ファイルパス指定して1ファイルずつ読み込み
-				File salesFile = new File(args[2],fileList[i]);
+				File salesFile = new File(args[0],fileList[i]);
 
 				//読み込み範囲は拡張子が「.rcd」のファイルだけ読み込み
 				if(fileList[i].matches("^.*rcd.*$") && !salesFile.isDirectory()){
@@ -177,7 +175,6 @@ public class Calculate_Sales_Main {
 					/*すでに生成されている支店売上マップと商品売上マップと
 					*読み込んできたファイル内のデータを比較して各コードが一致したら
 					*それぞれのマップの値をインクリメントする
-					System.out.println("キーは一致してる？①　" + branchSalesMap.containsKey(salesList.get(0)));
 					 */
 					//支店コードチェックを行う
 					if(!(salesList.get(0).matches("^\\d{3}$"))){
@@ -237,7 +234,7 @@ public class Calculate_Sales_Main {
 			//---------------------------------------------------------------------------------
 
 			//支店コードに対応する支店名と売上を出力
-			File branchOutfile = new File(args[2],"branch.out");
+			File branchOutfile = new File(args[0],"branch.out");
 			FileWriter branchOutfw = new FileWriter(branchOutfile);
 			BufferedWriter branchOutbw = new BufferedWriter(branchOutfw);
 			PrintWriter branchOutpw = new PrintWriter(branchOutbw);
@@ -248,7 +245,7 @@ public class Calculate_Sales_Main {
 			 branchOutpw.close();
 
 			//商品コードに対応する商品名と売上を出力
-			File commodOutfile = new File(args[2],"commodity.out");
+			File commodOutfile = new File(args[0],"commodity.out");
 			FileWriter commodOutfw = new FileWriter(commodOutfile);
 			BufferedWriter commodOutbw = new BufferedWriter(commodOutfw);
 			PrintWriter commodOutpw = new PrintWriter(commodOutbw);
@@ -259,7 +256,7 @@ public class Calculate_Sales_Main {
 			commodOutpw.close();
 		}
 		catch(Exception e){
-			//e.printStackTrace();
+			e.printStackTrace();
 			System.out.println("予期せぬエラーが発生しました");
 		}
 	}

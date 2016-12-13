@@ -3,19 +3,20 @@ package jp.co.iccom.haraguchi_yugi.calculate_sales;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
-import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 
 //メイン処理
 public class Calculate_Sales_Main {
 	public static void main(String[] args) {
-		System.out.println(args[0]);
-		System.out.println(args[1]);
 		try{
 			//---------------------------------------------------------------------------------
 			//支店定義ファイルの読み込み及び保持
@@ -37,6 +38,9 @@ public class Calculate_Sales_Main {
 			//支店定義ファイルを読み込んでMapに値を保持
 			HashMap<String,String> branchMap = new HashMap<String,String>();
 
+			//売上ファイル内の値段を支店コードと紐付けるためのHashMapを生成
+			HashMap<String, Long> branchSalesMap = new HashMap<String, Long>();
+
 			//一行ずつ読み込むための一時格納変数
 			String branchLine;
 
@@ -57,28 +61,21 @@ public class Calculate_Sales_Main {
 					System.out.println(branchstr.length);
 					return;
 				}
+				//定義ファイル内のデータをセット
 				branchMap.put(branchstr[0], branchstr[1]);
 
+				//集計に使用するHashMapを生成
+				branchSalesMap.put(branchstr[0], (long)0);
+
 			}
-			//デバッグ出力
-			System.out.println("支店定義ファイルが正常に読み込まれました");
 			blanchBr.close();
-			//デバッグ出力
-			System.out.println(branchMap.get("001"));
-			System.out.println(branchMap.get("002"));
-			System.out.println(branchMap.get("003"));
-			System.out.println(branchMap.get("004"));
-
-			System.out.println("==================================================");
-
 			//---------------------------------------------------------------------------------
 			//商品定義ファイルの読み込み及び保持
 			//---------------------------------------------------------------------------------
-
 			//ファイルパスを指定
 			File commodFile = new File(args[1]);
 
-			//エラーチェック③→ディレクトリを見に行った際に「commodity.lst」がなかったら処理を終了させる
+			//エラーチェック→ディレクトリを見に行った際に「commodity.lst」がなかったら処理を終了させる
 			if(!commodFile.exists()){
 				System.out.println("商品定義ファイルが存在しません");
 				return;
@@ -89,6 +86,10 @@ public class Calculate_Sales_Main {
 
 			//支店定義ファイルを読み込んでMapに値を保持
 			HashMap<String,String> commodMap = new HashMap<String,String>();
+
+			//売上ファイル内の値段を商品コードと紐付けるためのHashMapを生成
+			HashMap<String, Long> commodSalesMap = new HashMap<String, Long>();
+
 
 			//一行ずつ読み込むための一時格納変数
 			String commodLine;
@@ -109,18 +110,13 @@ public class Calculate_Sales_Main {
 					commodBr.close();
 					return;
 				}
+				//定義ファイル内のデータを登録
 				commodMap.put(commodstr[0], commodstr[1]);
-			}
-			//デバッグ出力
-			System.out.println("商品定義ファイルが正常に読み込まれました");
-			commodBr.close();
-			//デバッグ出力
-			System.out.println(commodMap.get("SFT00001"));
-			System.out.println(commodMap.get("SFT00002"));
-			System.out.println(commodMap.get("SFT00003"));
-			System.out.println(commodMap.get("SFT00004"));
-			System.out.println("==================================================");
 
+				//集計に使用するマップの初期化
+				commodSalesMap.put(commodstr[0], (long)0);
+			}
+			commodBr.close();
 			//---------------------------------------------------------------------------------
 			//売上ファイルの読み込み及び保持、計算を行う
 			//---------------------------------------------------------------------------------
@@ -134,12 +130,6 @@ public class Calculate_Sales_Main {
 			//ファイル内のデータを格納するためのArrayListを生成
 			ArrayList<String> salesList = new ArrayList<String>();
 
-			//売上ファイル内の値段を支店コードと紐付けるためのHashMapを生成
-			HashMap<String, Integer> branchSalesMap = new HashMap<String, Integer>();
-
-			//売上ファイル内の値段を商品コードと紐付けるためのHashMapを生成
-			HashMap<String, Integer> commodSalesMap = new HashMap<String, Integer>();
-
 			//一行ずつ読み込むための一時格納変数
 			String salesLine;
 
@@ -147,27 +137,25 @@ public class Calculate_Sales_Main {
 			for(int i = 0 ; i < fileList.length ; i++){
 
 				//「.rcd」の拡張子の場合のみif文の中を実行
-				if(fileList[i].matches("^.*.rcd.*$")){
+				if(fileList[i].matches("^.*.rcd.*$") && !dir.isDirectory()){
 
 					//連番チェックの為、「.」で文字列を分割する
 					String[] divstr = fileList[i].split("\\.");
 
 					//連番チェックの為、divstr[0]番に入っている分割した文字列の数字をint型に変換
-					int fileNameNum = Integer.parseInt(divstr[0]);
+					long fileNameNum = Long.parseLong(divstr[0]);
 
 					//if文で連番チェック→fileNameNumとカウンターの「i」の差が「1」以外は処理を終了させる
 					if(!((fileNameNum - i) == 1)){
 						System.out.println("ファイルが連番になっていません");
 						return;
 					}
-					//デバッグ表示
-					System.out.println("divstr[0]　=" + divstr[0]);
 				}
 				//ファイルパス指定して1ファイルずつ読み込み
 				File salesFile = new File(args[2],fileList[i]);
 
 				//読み込み範囲は拡張子が「.rcd」のファイルだけ読み込み
-				if(!fileList[i].matches("^.*lst.*$")){
+				if(fileList[i].matches("^.*rcd.*$") && !salesFile.isDirectory()){
 
 					//売上ファイルの読み込み処理
 					FileReader salesFr = new FileReader(salesFile);
@@ -176,147 +164,106 @@ public class Calculate_Sales_Main {
 					//1ファイル内のデータをすべてaddしていく
 					while((salesLine = salesBr.readLine()) != null){
 						salesList.add(salesLine);
+
 					}
 					//salesBrをクローズ
 					salesBr.close();
 
 					//要素数のチェック→要素数が3以外はエラーを返す
-					if(!(salesList.size() == 3)){
+					if(fileList[i].matches("^.*.rcd.*$") && !(salesList.size() == 3)){
 						System.out.println("<" + fileList[i] + ">のファイルフォーマットが不正です" );
 						return;
 					}
-
-
-					//支店売り上げと商品売り上げのキーを格納
-					for(int j = 0 ; j < salesList.size() ; j++){
-						//支店コードチェックを行う
-						if(!(salesList.get(0).matches("^\\d{3}$"))){
-							System.out.println("<" + fileList[i] + ">の支店コードが不正です");
-							return;
-						//商品コードのチェックを行う
-						}
-						//支店売り上げ格納用のマップに支店コードをキーとして格納値は「0」
-						branchSalesMap.put(salesList.get(0), 0);
-
-
-						//商品コードが不正の場合、エラーメッセージ後に処理を終了
-						if(!salesList.get(1).matches("^[0-9].*[a-zA-Z]|[a-zA-Z].*[0-9].\\d{3}$")){
-							System.out.println("<" + fileList[i] + ">の商品コードが不正です");
-							return;
-						}
-						//商品売り上げ格納用のマップに商品コードをキーとして格納値は「0」
-						commodSalesMap.put(salesList.get(1), 0);
-					}
-
-					//それぞれのマップの値をインクリメントする
-
+					/*すでに生成されている支店売上マップと商品売上マップと
+					*読み込んできたファイル内のデータを比較して各コードが一致したら
+					*それぞれのマップの値をインクリメントする
 					System.out.println("キーは一致してる？①　" + branchSalesMap.containsKey(salesList.get(0)));
-
-					//addした要素を「支店コードと金額」と設定されたHashMapにセットしていく
-					//2週目のループ以降にすでに登録されていたらelseifの処理を行う
-					if(branchSalesMap.get(salesList.get(0)) == null || !branchSalesMap.containsKey(salesList.get(0))){
-						branchSalesMap.put(salesList.get(0), Integer.parseInt(salesList.get(2)));
-						//デバッグ表示
-						System.out.println("キーは一致してる？　" + branchSalesMap.containsKey(salesList.get(0)));
-
-					//キーが一致していたら、対応するコードのvalueに加算していく
-					}else if(branchSalesMap.containsKey(salesList.get(0))){
-						int buffValue = branchSalesMap.get(salesList.get(0));							//一時格納変数
-						int sumValue = 0;				//現ループの合計を格納する変数
-
-						//新しい値をput
-						branchSalesMap.put(salesList.get(0), Integer.parseInt(salesList.get(2)));
-
-						sumValue = buffValue + branchSalesMap.get(salesList.get(0));
-
-						//加算した値をputして登録
-						branchSalesMap.put(salesList.get(0), sumValue);
-
-						//合計金額が10桁以上の場合エラーを返して処理を終了させる
-						if(salesList.get(0).matches("^\\d{10,}$")){
-							System.out.println("合計金額が10桁を超えました");
-							return;
-						}
+					 */
+					//支店コードチェックを行う
+					if(!(salesList.get(0).matches("^\\d{3}$"))){
+						System.out.println("<" + fileList[i] + ">の支店コードが不正です");
+						return;
 					}
-					//デバッグ表示
-					System.out.println( branchSalesMap.entrySet());
-					System.out.println( salesList.get(1));
-
-					//addした要素を「商品コードと金額」と設定されたHashMapにセットしていく
-					//2週目のループ以降にすでに登録されていたらelseifの処理を行う
-					if(commodSalesMap.get(salesList.get(1)) == null || !commodSalesMap.containsKey(salesList.get(1))){
-						commodSalesMap.put(salesList.get(1), Integer.parseInt(salesList.get(2)));
-						//デバッグ表示
-						System.out.println("キーは一致してる？　" + commodSalesMap.containsKey(salesList.get(1)));
-
-					//キーが一致していたら、対応するコードのvalueに加算していく
-					}else if(commodSalesMap.containsKey(salesList.get(1))){
-						int buffValue = commodSalesMap.get(salesList.get(1));							//一時格納変数
-						int sumValue = 0;				//現ループの合計を格納する変数
-
-						//新しい値をput
-						commodSalesMap.put(salesList.get(1), Integer.parseInt(salesList.get(2)));
-
-						sumValue = buffValue + commodSalesMap.get(salesList.get(1));
-
-						//加算した値をputして登録
-						commodSalesMap.put(salesList.get(1), sumValue);
-
-						//合計金額が10桁以上の場合エラーを返して処理を終了させる
-						if(salesList.get(1).matches("^\\d{10,}$")){
-							System.out.println("合計金額が10桁を超えました");
-							return;
-						}
+					//支店コードに紐づく売上金を加算する処理
+					if(branchSalesMap.containsKey(salesList.get(0))){
+						//支店売上金額をint型の計算用変数にキャストして格納
+						long branchValue = Long.parseLong(salesList.get(2));
+						branchValue += branchSalesMap.get(salesList.get(0));
+						branchSalesMap.put(salesList.get(0), branchValue);
 					}
 
-					//デバッグ表示
-					System.out.println( commodSalesMap.entrySet());
-
-
-					//要素内をクリア
+					//商品コードが不正の場合、エラーメッセージ後に処理を終了
+					if(!salesList.get(1).matches("^[0-9].*[a-zA-Z]|[a-zA-Z].*[0-9].\\d{3}$")){
+						System.out.println("<" + fileList[i] + ">の商品コードが不正です");
+						return;
+					}
+					//商品コードに紐づく売上金を加算する処理
+					if(commodSalesMap.containsKey(salesList.get(1))){
+						//商品売上金額をint型の計算用変数にキャストして格納
+						long commodValue = Long.parseLong(salesList.get(2));
+						commodValue += commodSalesMap.get(salesList.get(1));
+						commodSalesMap.put(salesList.get(1), commodValue);
+					}
+					//ArrayListの要素をクリア
 					salesList.clear();
-
-					System.out.println(salesFile);
-					System.out.println("=============================================");
 				}
 			}
-
-
-
 
 			//---------------------------------------------------------------------------------
 			//集計結果をソート処理
 			//---------------------------------------------------------------------------------
 			//ソート処理は以下のページを参考に
 			//http://papiroidsensei.com/memo/java_map_sort.html
-
-
-
+			//支店売上金額のソート用のListを生成
+			List<Map.Entry<String, Long>> branchSortEntries = new ArrayList<Map.Entry<String, Long>>(branchSalesMap.entrySet());
+			Collections.sort(branchSortEntries, new Comparator<Map.Entry<String,Long>>() {
+				 //オーバーライド
+				@Override		//アノテーション
+	            public int compare(
+	                  Entry<String,Long> entry1, Entry<String,Long> entry2) {
+	                return ((Long)entry2.getValue()).compareTo((Long)entry1.getValue());
+	            }
+	        });
+	        //商品売上金額のソート用のListを生成
+			List<Map.Entry<String, Long>> commodSortEntries = new ArrayList<Map.Entry<String, Long>>(commodSalesMap.entrySet());
+			Collections.sort(commodSortEntries, new Comparator<Map.Entry<String,Long>>() {
+				 //オーバーライド
+				@Override		//アノテーション
+	            public int compare(
+	                  Entry<String,Long> entry1, Entry<String,Long> entry2) {
+	                return ((Long)entry2.getValue()).compareTo((Long)entry1.getValue());
+	            }
+	        });
 			//---------------------------------------------------------------------------------
 			//集計結果を出力
 			//---------------------------------------------------------------------------------
 
-			//outPut先の拡張子を設定
+			//支店コードに対応する支店名と売上を出力
 			File branchOutfile = new File(args[2],"branch.out");
 			FileWriter branchOutfw = new FileWriter(branchOutfile);
 			BufferedWriter branchOutbw = new BufferedWriter(branchOutfw);
 			PrintWriter branchOutpw = new PrintWriter(branchOutbw);
 
-			//デバッグ出力
-			//branchOutpw.format("");
+			 for (Entry<String,Long> branchEn : branchSortEntries) {
+				 branchOutpw.println(branchEn.getKey() + "," + branchMap.get(branchEn.getKey()) + "," + branchEn.getValue());
+			 }
+			 branchOutpw.close();
 
+			//商品コードに対応する商品名と売上を出力
+			File commodOutfile = new File(args[2],"commodity.out");
+			FileWriter commodOutfw = new FileWriter(commodOutfile);
+			BufferedWriter commodOutbw = new BufferedWriter(commodOutfw);
+			PrintWriter commodOutpw = new PrintWriter(commodOutbw);
 
-
-			branchOutpw.close();
-
+			for (Entry<String,Long> commodEn : commodSortEntries) {
+				commodOutpw.println(commodEn.getKey() + "," + commodMap.get(commodEn.getKey()) + "," + commodEn.getValue());
+			}
+			commodOutpw.close();
 		}
-		catch(FileNotFoundException e){
-			e.printStackTrace();
+		catch(Exception e){
+			//e.printStackTrace();
+			System.out.println("予期せぬエラーが発生しました");
 		}
-		catch(IOException e){
-			e.printStackTrace();
-		}
-
 	}
 
 }

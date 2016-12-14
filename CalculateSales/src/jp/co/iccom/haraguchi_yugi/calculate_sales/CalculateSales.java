@@ -26,24 +26,25 @@ public class CalculateSales {
 			//ファイルパスを指定
 			File branchFile = new File(args[0],"branch.lst");
 
+			//エラーチェック→ディレクトリを見に行った際に「branch.lst」がなかったら処理を終了させる
+			if(!branchFile.isFile() || !branchFile.exists()){
+				System.out.println("支店定義ファイルが存在しません");
+				return;
+			}
 			//読み込み処理
 			FileReader branchFr = new FileReader(branchFile);
 			BufferedReader blanchBr = new BufferedReader(branchFr);
+
 			//支店定義ファイルを読み込んでMapに値を保持
 			HashMap<String,String> branchMap = new HashMap<String,String>();
+
 			//売上ファイル内の値段を支店コードと紐付けるためのHashMapを生成
 			HashMap<String, Long> branchSalesMap = new HashMap<String, Long>();
 
-			try{
-				//エラーチェック→ディレクトリを見に行った際に「branch.lst」がなかったら処理を終了させる
-				if(!branchFile.isFile() || !branchFile.exists()){
-					System.out.println("支店定義ファイルが存在しません");
-					blanchBr.close();
-					return;
-				}
-				//一行ずつ読み込むための一時格納変数
-				String branchLine;
+			//一行ずつ読み込むための一時格納変数
+			String branchLine;
 
+			try{
 				/*繰り返しの処理で一行ずつ読み込み、，を基準にsplitで文字分割を行い、
 				* splitで保持されたデータをHashMapのキーと値に設定する
 				* 読込先がnullなったらループを抜ける処理
@@ -99,10 +100,10 @@ public class CalculateSales {
 			//売上ファイル内の値段を商品コードと紐付けるためのHashMapを生成
 			HashMap<String, Long> commodSalesMap = new HashMap<String, Long>();
 
-			try{
-				//一行ずつ読み込むための一時格納変数
-				String commodLine;
+			//一行ずつ読み込むための一時格納変数
+			String commodLine;
 
+			try{
 				/*繰り返しの処理で一行ずつ読み込み、，を基準にsplitで文字分割を行い、
 				* splitで保持されたデータをHashMapのキーと値に設定する
 				* 読込先がnullなったらループを抜ける処理
@@ -113,7 +114,7 @@ public class CalculateSales {
 					/*エラーチェック→ファイルフォーマットが不正か
 					*正規表現を用いてチェックし不正だったら処理を終了させる
 					*/
-					if(!(commodstr.length == 2) || !(commodstr[0].matches("^^[0-9a-zA-Z].*{8}$"))){
+					if(!(commodstr.length == 2) || !(commodstr[0].matches("^[0-9a-zA-Z].*{8}$"))){
 						System.out.println("商品定義ファイルのフォーマットが不正です");
 						return;
 					}
@@ -160,7 +161,7 @@ public class CalculateSales {
 				for(int i = 0 ; i < fileList.length ; i++){
 
 					//「.rcd」の拡張子の場合のみif文の中を実行
-					if(fileList[i].matches("^.*.rcd.*$") && !dir.isDirectory()){
+					if(fileList[i].matches("^\\d{8}.*(.rcd)$") && !dir.isDirectory()){
 
 						//連番チェックの為、「.」で文字列を分割する
 						String[] divstr = fileList[i].split("\\.");
@@ -178,7 +179,7 @@ public class CalculateSales {
 					File salesFile = new File(args[0],fileList[i]);
 
 					//読み込み範囲は拡張子が「.rcd」のファイルだけ読み込み
-					if(!fileList[i].isEmpty() && fileList[i].matches("^.*rcd.*$") && !salesFile.isDirectory()){
+					if(fileList[i].matches("^\\d{8}.*(.rcd)$") && !salesFile.isDirectory()){
 
 						//売上ファイルの読み込み処理
 						salesFr = new FileReader(salesFile);
@@ -190,14 +191,13 @@ public class CalculateSales {
 						}
 
 						//要素数のチェック→要素数が3以外はエラーを返す
-						if(fileList[i].matches("^.*.rcd.*$") && !(salesList.size() == 3)){
+						if(fileList[i].matches("^\\d{8}.*(.rcd)$") && !(salesList.size() == 3)){
 							System.out.println(fileList[i] + "のファイルフォーマットが不正です" );
 							return;
 						}
 
 						//計算を行う前に売上ファイルの３行目に数字以外の文字列が入っていたらエラーを返して処理を終了
-						if(!salesList.get(2).matches("^[0-9]*$")){
-							System.out.println(fileList[i] + "のファイルフォーマットが不正です" );
+						if(salesList.get(2).matches("^\\d$")){
 							return;
 						}
 
@@ -217,7 +217,7 @@ public class CalculateSales {
 							branchValue += branchSalesMap.get(salesList.get(0));
 							branchSalesMap.put(salesList.get(0), branchValue);
 							//branchSalesMapに保持されている合計金額が10桁以上の場合エラーを返す
-							if(String.valueOf(branchValue).length() >= 10){
+							if(String.valueOf(branchValue).length() > 10){
 								System.out.println("合計金額が10桁を超えました");
 								return;
 							}
@@ -226,7 +226,7 @@ public class CalculateSales {
 
 						//商品コードが不正の場合、エラーメッセージ後に処理を終了
 						if(!salesList.get(1).matches("^[0-9a-zA-Z].*{8}$")){
-							System.out.println("<" + fileList[i] + ">の商品コードが不正です");
+							System.out.println(fileList[i] + "の商品コードが不正です");
 							return;
 						}
 						//商品コードに紐づく売上金を加算する処理
@@ -243,8 +243,7 @@ public class CalculateSales {
 						}
 						//ArrayListの要素をクリア
 						salesList.clear();
-				}
-
+					}
 				}
 			}catch(FileNotFoundException e){
 				e.printStackTrace();
@@ -264,8 +263,6 @@ public class CalculateSales {
 			//---------------------------------------------------------------------------------
 			//集計結果をソート処理
 			//---------------------------------------------------------------------------------
-			//ソート処理は以下のページを参考に
-			//http://papiroidsensei.com/memo/java_map_sort.html
 			//支店売上金額のソート用のListを生成
 			List<Map.Entry<String, Long>> branchSortEntries = new ArrayList<Map.Entry<String, Long>>(branchSalesMap.entrySet());
 			Collections.sort(branchSortEntries, new Comparator<Map.Entry<String,Long>>() {
@@ -335,7 +332,7 @@ public class CalculateSales {
 				}
 			}
 		}catch(Exception e){
-		e.printStackTrace();
+			e.printStackTrace();
 			System.out.println("予期せぬエラーが発生しました");
 		}
 	}

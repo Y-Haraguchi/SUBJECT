@@ -171,7 +171,7 @@ public class CalculateSales {
 
 						//if文で連番チェック→fileNameNumとカウンターの「i」の差が「1」以外は処理を終了させる
 						if(!((fileNameNum - i) == 1)){
-							System.out.println("ファイルが連番になっていません");
+							System.out.println("売上ファイル名が連番になっていません");
 							return;
 						}
 					}
@@ -206,7 +206,7 @@ public class CalculateSales {
 						*それぞれのマップの値をインクリメントする
 						 */
 						//支店コードチェックを行う
-						if(!(salesList.get(0).matches("^\\d{3}$"))){
+						if(!(branchSalesMap.containsKey(salesList.get(0)))){
 							System.out.println(fileList[i] + "の支店コードが不正です");
 							return;
 						}
@@ -225,7 +225,7 @@ public class CalculateSales {
 						}
 
 						//商品コードが不正の場合、エラーメッセージ後に処理を終了
-						if(!salesList.get(1).matches("^[0-9a-zA-Z].*{8}$")){
+						if(!commodSalesMap.containsKey(salesList.get(1))){
 							System.out.println(fileList[i] + "の商品コードが不正です");
 							return;
 						}

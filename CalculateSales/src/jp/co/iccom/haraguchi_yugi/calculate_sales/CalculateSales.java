@@ -36,7 +36,7 @@ public class CalculateSales {
 
 			try{
 				//エラーチェック→ディレクトリを見に行った際に「branch.lst」がなかったら処理を終了させる
-				if(!branchFile.exists()){
+				if(!branchFile.isFile() || !branchFile.exists()){
 					System.out.println("支店定義ファイルが存在しません");
 					blanchBr.close();
 					return;
@@ -85,7 +85,7 @@ public class CalculateSales {
 			File commodFile = new File(args[0],"commodity.lst");
 
 			//エラーチェック→ディレクトリを見に行った際に「commodity.lst」がなかったら処理を終了させる
-			if(!commodFile.exists()){
+			if(!commodFile.isFile() || !commodFile.exists()){
 				System.out.println("商品定義ファイルが存在しません");
 				return;
 			}
@@ -113,7 +113,7 @@ public class CalculateSales {
 					/*エラーチェック→ファイルフォーマットが不正か
 					*正規表現を用いてチェックし不正だったら処理を終了させる
 					*/
-					if(!(commodstr.length == 2) || !(commodstr[0].matches("^[0-9].*[a-zA-Z]|[a-zA-Z].*[0-9].\\d{3}$"))){
+					if(!(commodstr.length == 2) || !(commodstr[0].matches("^^[0-9a-zA-Z].*{8}$"))){
 						System.out.println("商品定義ファイルのフォーマットが不正です");
 						return;
 					}
@@ -138,7 +138,6 @@ public class CalculateSales {
 			//---------------------------------------------------------------------------------
 			//売上ファイルの読み込み及び保持、計算を行う
 			//---------------------------------------------------------------------------------
-			//売上ファイルを読み込む
 			//フォルダのパスを指定
 			File dir = new File(args[0]);
 
@@ -179,7 +178,7 @@ public class CalculateSales {
 					File salesFile = new File(args[0],fileList[i]);
 
 					//読み込み範囲は拡張子が「.rcd」のファイルだけ読み込み
-					if(fileList[i].matches("^.*rcd.*$") && !salesFile.isDirectory()){
+					if(!fileList[i].isEmpty() && fileList[i].matches("^.*rcd.*$") && !salesFile.isDirectory()){
 
 						//売上ファイルの読み込み処理
 						salesFr = new FileReader(salesFile);
@@ -195,6 +194,13 @@ public class CalculateSales {
 							System.out.println(fileList[i] + "のファイルフォーマットが不正です" );
 							return;
 						}
+
+						//計算を行う前に売上ファイルの３行目に数字以外の文字列が入っていたらエラーを返して処理を終了
+						if(!salesList.get(2).matches("^[0-9]*$")){
+							System.out.println(fileList[i] + "のファイルフォーマットが不正です" );
+							return;
+						}
+
 						/*すでに生成されている支店売上マップと商品売上マップと
 						*読み込んできたファイル内のデータを比較して各コードが一致したら
 						*それぞれのマップの値をインクリメントする
@@ -210,10 +216,16 @@ public class CalculateSales {
 							long branchValue = Long.parseLong(salesList.get(2));
 							branchValue += branchSalesMap.get(salesList.get(0));
 							branchSalesMap.put(salesList.get(0), branchValue);
+							//branchSalesMapに保持されている合計金額が10桁以上の場合エラーを返す
+							if(String.valueOf(branchValue).length() >= 10){
+								System.out.println("合計金額が10桁を超えました");
+								return;
+							}
+
 						}
 
 						//商品コードが不正の場合、エラーメッセージ後に処理を終了
-						if(!salesList.get(1).matches("^[0-9].*[a-zA-Z]|[a-zA-Z].*[0-9].\\d{3}$")){
+						if(!salesList.get(1).matches("^[0-9a-zA-Z].*{8}$")){
 							System.out.println("<" + fileList[i] + ">の商品コードが不正です");
 							return;
 						}
@@ -223,10 +235,16 @@ public class CalculateSales {
 							long commodValue = Long.parseLong(salesList.get(2));
 							commodValue += commodSalesMap.get(salesList.get(1));
 							commodSalesMap.put(salesList.get(1), commodValue);
+							//commodSalesMapに保持されている合計金額が10桁以上の場合エラーを返す
+							if(String.valueOf(commodValue).length() >= 10){
+								System.out.println("合計金額が10桁を超えました");
+								return;
+							}
 						}
 						//ArrayListの要素をクリア
 						salesList.clear();
-					}
+				}
+
 				}
 			}catch(FileNotFoundException e){
 				e.printStackTrace();

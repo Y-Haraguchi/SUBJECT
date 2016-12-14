@@ -159,32 +159,31 @@ public class CalculateSales {
 			FileReader salesFr = null;
 			BufferedReader salesBr = null;
 
-			try{
-				//繰り替えしてファイルを読み込み
-				for(int i = 0 ; i < fileList.length ; i++){
+			//繰り替えしてファイルを読み込み
+			for(int i = 0 ; i < fileList.length ; i++){
 
-					File jugeFile = new File(args[0],fileList[i]);
+				File jugeFile = new File(args[0],fileList[i]);
 
-					//「.rcd」の拡張子の場合のみif文の中を実行
-					if(jugeFile.isFile() && fileList[i].matches("^\\d{8}.*(.rcd)$")){
+				//「.rcd」の拡張子の場合のみif文の中を実行
+				if(fileList[i].matches("^\\d{8}.*(.rcd)$") && jugeFile.isFile()){
 
-						//連番チェックの為、「.」で文字列を分割する
-						String[] divstr = fileList[i].split("\\.");
+					//連番チェックの為、「.」で文字列を分割する
+					String[] divstr = fileList[i].split("\\.");
 
-						//連番チェックの為、divstr[0]番に入っている分割した文字列の数字をint型に変換
-						long fileNameNum = Long.parseLong(divstr[0]);
-						System.out.println(fileNameNum);
+					//連番チェックの為、divstr[0]番に入っている分割した文字列の数字をint型に変換
+					long fileNameNum = Long.parseLong(divstr[0]);
 
-						//if文で連番チェック→fileNameNumとカウンターの「i」の差が「1」以外は処理を終了させる
-						if(!((fileNameNum - i) == 1)){
-							System.out.println("売上ファイル名が連番になっていません");
-							return;
-						}
-					}else{
-
+					//if文で連番チェック→fileNameNumとカウンターの「i」の差が「1」以外は処理を終了させる
+					if(!((fileNameNum - i) == 1)){
+						System.out.println("売上ファイル名が連番になっていません");
+						return;
 					}
+				}
+			}
 
-					//ファイルパス指定して1ファイルずつ読み込み
+			try{
+				for(int i = 0 ; i < fileList.length ; i++){
+									//ファイルパス指定して1ファイルずつ読み込み
 					File salesFile = new File(args[0],fileList[i]);
 
 					//読み込み範囲は拡張子が「.rcd」のファイルだけ読み込み

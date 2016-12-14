@@ -147,7 +147,7 @@ public class CalculateSales {
 
 			//for文で連番ファイルを読み込む
 			//フォルダ内のファイル名取得→「00000001.rcd」の部分
-			String[] fileList = dir.list();
+			File[] fileList = dir.listFiles();
 
 			//ファイル内のデータを格納するためのArrayListを生成
 			ArrayList<String> salesList = new ArrayList<String>();
@@ -162,32 +162,32 @@ public class CalculateSales {
 			//繰り替えしてファイルを読み込み
 			for(int i = 0 ; i < fileList.length ; i++){
 
-				File jugeFile = new File(args[0],fileList[i]);
-
 				//「.rcd」の拡張子の場合のみif文の中を実行
-				if(fileList[i].matches("^\\d{8}.*(.rcd)$") && jugeFile.isFile()){
+				if(fileList[i].getName().substring(0).matches("^\\d{8}\\.rcd$") && fileList[i].isFile()){
 
 					//連番チェックの為、「.」で文字列を分割する
-					String[] divstr = fileList[i].split("\\.");
+					String divstr = fileList[i].getName().substring(0, 8);
 
 					//連番チェックの為、divstr[0]番に入っている分割した文字列の数字をint型に変換
-					long fileNameNum = Long.parseLong(divstr[0]);
+					long fileNameNum = Long.parseLong(divstr);
 
 					//if文で連番チェック→fileNameNumとカウンターの「i」の差が「1」以外は処理を終了させる
 					if(!((fileNameNum - i) == 1)){
 						System.out.println("売上ファイル名が連番になっていません");
 						return;
 					}
+				}else{
+					break;
 				}
 			}
 
 			try{
 				for(int i = 0 ; i < fileList.length ; i++){
-									//ファイルパス指定して1ファイルずつ読み込み
-					File salesFile = new File(args[0],fileList[i]);
+					//ファイルパス指定して1ファイルずつ読み込み
+					File salesFile = new File(args[0],fileList[i].getName());
 
 					//読み込み範囲は拡張子が「.rcd」のファイルだけ読み込み
-					if(fileList[i].matches("^\\d{8}.*(.rcd)$")){
+					if(fileList[i].getName().substring(0).matches("^\\d{8}\\.rcd$") && fileList[i].isFile()){
 
 						//売上ファイルの読み込み処理
 						salesFr = new FileReader(salesFile);
@@ -199,7 +199,7 @@ public class CalculateSales {
 						}
 
 						//要素数のチェック→要素数が3以外はエラーを返す
-						if(fileList[i].matches("^\\d{8}.*(.rcd)$") && !(salesList.size() == 3)){
+						if(fileList[i].getName().substring(0).matches("^\\d{8}\\.rcd$") && !(salesList.size() == 3)){
 							System.out.println(fileList[i] + "のフォーマットが不正です" );
 							return;
 						}
@@ -251,14 +251,18 @@ public class CalculateSales {
 						}
 						//ArrayListの要素をクリア
 						salesList.clear();
+					}else{
+						break;
 					}
 				}
 			}catch(NumberFormatException e){
 				e.printStackTrace();
 				System.out.println("予期せぬエラーが発生しました");
 			}catch(FileNotFoundException e){
+				e.printStackTrace();
 				System.out.println("予期せぬエラーが発生しました");
 			}catch(IOException e){
+				e.printStackTrace();
 				System.out.println("予期せぬエラーが発生しました");
 			}finally{
 				try{
@@ -270,6 +274,7 @@ public class CalculateSales {
 						}
 					}
 				}catch(IOException e2){
+					e2.printStackTrace();
 					System.out.println("予期せぬエラーが発生しました");
 				}
 			}
@@ -345,6 +350,7 @@ public class CalculateSales {
 				}
 			}
 		}catch(Exception e){
+			e.printStackTrace();
 			System.out.println("予期せぬエラーが発生しました");
 		}
 	}

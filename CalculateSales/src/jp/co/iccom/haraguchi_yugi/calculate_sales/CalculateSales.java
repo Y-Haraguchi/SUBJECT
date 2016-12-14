@@ -29,6 +29,10 @@ public class CalculateSales {
 			//読み込み処理
 			FileReader branchFr = new FileReader(branchFile);
 			BufferedReader blanchBr = new BufferedReader(branchFr);
+			//支店定義ファイルを読み込んでMapに値を保持
+			HashMap<String,String> branchMap = new HashMap<String,String>();
+			//売上ファイル内の値段を支店コードと紐付けるためのHashMapを生成
+			HashMap<String, Long> branchSalesMap = new HashMap<String, Long>();
 
 			try{
 				//エラーチェック→ディレクトリを見に行った際に「branch.lst」がなかったら処理を終了させる
@@ -37,13 +41,6 @@ public class CalculateSales {
 					blanchBr.close();
 					return;
 				}
-
-				//支店定義ファイルを読み込んでMapに値を保持
-				HashMap<String,String> branchMap = new HashMap<String,String>();
-
-				//売上ファイル内の値段を支店コードと紐付けるためのHashMapを生成
-				HashMap<String, Long> branchSalesMap = new HashMap<String, Long>();
-
 				//一行ずつ読み込むための一時格納変数
 				String branchLine;
 
@@ -73,7 +70,13 @@ public class CalculateSales {
 			}catch(IOException e){
 				e.printStackTrace();
 			}finally{
-				blanchBr.close();
+				try{
+					if(blanchBr != null){
+						blanchBr.close();
+					}
+				}catch(IOException e){
+
+				}
 			}
 			//---------------------------------------------------------------------------------
 			//商品定義ファイルの読み込み及び保持
@@ -90,14 +93,13 @@ public class CalculateSales {
 			FileReader commodFr = new FileReader(commodFile);
 			BufferedReader commodBr = new BufferedReader(commodFr);
 
+			//支店定義ファイルを読み込んでMapに値を保持
+			HashMap<String,String> commodMap = new HashMap<String,String>();
+
+			//売上ファイル内の値段を商品コードと紐付けるためのHashMapを生成
+			HashMap<String, Long> commodSalesMap = new HashMap<String, Long>();
+
 			try{
-				//支店定義ファイルを読み込んでMapに値を保持
-				HashMap<String,String> commodMap = new HashMap<String,String>();
-
-				//売上ファイル内の値段を商品コードと紐付けるためのHashMapを生成
-				HashMap<String, Long> commodSalesMap = new HashMap<String, Long>();
-
-
 				//一行ずつ読み込むための一時格納変数
 				String commodLine;
 
@@ -105,7 +107,6 @@ public class CalculateSales {
 				* splitで保持されたデータをHashMapのキーと値に設定する
 				* 読込先がnullなったらループを抜ける処理
 				*/
-
 				while((commodLine = commodBr.readLine()) != null){
 					String[] commodstr = commodLine.split(",");
 
@@ -118,7 +119,6 @@ public class CalculateSales {
 					}
 					//定義ファイル内のデータを登録
 					commodMap.put(commodstr[0], commodstr[1]);
-
 					//集計に使用するマップの初期化
 					commodSalesMap.put(commodstr[0], (long)0);
 				}
@@ -127,7 +127,13 @@ public class CalculateSales {
 			}catch(IOException e){
 				e.printStackTrace();
 			}finally{
-				commodBr.close();
+				try{
+					if(commodBr != null){
+						commodBr.close();
+					}
+				}catch(IOException e){
+
+				}
 			}
 			//---------------------------------------------------------------------------------
 			//売上ファイルの読み込み及び保持、計算を行う
@@ -146,80 +152,97 @@ public class CalculateSales {
 			//一行ずつ読み込むための一時格納変数
 			String salesLine;
 
-			//繰り替えしてファイルを読み込み
-			for(int i = 0 ; i < fileList.length ; i++){
+			//売上ファイルの読み込み処理
+			FileReader salesFr = null;
+			BufferedReader salesBr = null;
 
-				//「.rcd」の拡張子の場合のみif文の中を実行
-				if(fileList[i].matches("^.*.rcd.*$") && !dir.isDirectory()){
+			try{
+				//繰り替えしてファイルを読み込み
+				for(int i = 0 ; i < fileList.length ; i++){
 
-					//連番チェックの為、「.」で文字列を分割する
-					String[] divstr = fileList[i].split("\\.");
+					//「.rcd」の拡張子の場合のみif文の中を実行
+					if(fileList[i].matches("^.*.rcd.*$") && !dir.isDirectory()){
 
-					//連番チェックの為、divstr[0]番に入っている分割した文字列の数字をint型に変換
-					long fileNameNum = Long.parseLong(divstr[0]);
+						//連番チェックの為、「.」で文字列を分割する
+						String[] divstr = fileList[i].split("\\.");
 
-					//if文で連番チェック→fileNameNumとカウンターの「i」の差が「1」以外は処理を終了させる
-					if(!((fileNameNum - i) == 1)){
-						System.out.println("ファイルが連番になっていません");
-						return;
+						//連番チェックの為、divstr[0]番に入っている分割した文字列の数字をint型に変換
+						long fileNameNum = Long.parseLong(divstr[0]);
+
+						//if文で連番チェック→fileNameNumとカウンターの「i」の差が「1」以外は処理を終了させる
+						if(!((fileNameNum - i) == 1)){
+							System.out.println("ファイルが連番になっていません");
+							return;
+						}
+					}
+					//ファイルパス指定して1ファイルずつ読み込み
+					File salesFile = new File(args[0],fileList[i]);
+
+					//読み込み範囲は拡張子が「.rcd」のファイルだけ読み込み
+					if(fileList[i].matches("^.*rcd.*$") && !salesFile.isDirectory()){
+
+						//売上ファイルの読み込み処理
+						salesFr = new FileReader(salesFile);
+						salesBr = new BufferedReader(salesFr);
+
+						//1ファイル内のデータをすべてaddしていく
+						while((salesLine = salesBr.readLine()) != null){
+							salesList.add(salesLine);
+						}
+
+						//要素数のチェック→要素数が3以外はエラーを返す
+						if(fileList[i].matches("^.*.rcd.*$") && !(salesList.size() == 3)){
+							System.out.println(fileList[i] + "のファイルフォーマットが不正です" );
+							return;
+						}
+						/*すでに生成されている支店売上マップと商品売上マップと
+						*読み込んできたファイル内のデータを比較して各コードが一致したら
+						*それぞれのマップの値をインクリメントする
+						 */
+						//支店コードチェックを行う
+						if(!(salesList.get(0).matches("^\\d{3}$"))){
+							System.out.println(fileList[i] + "の支店コードが不正です");
+							return;
+						}
+						//支店コードに紐づく売上金を加算する処理
+						if(branchSalesMap.containsKey(salesList.get(0))){
+							//支店売上金額をint型の計算用変数にキャストして格納
+							long branchValue = Long.parseLong(salesList.get(2));
+							branchValue += branchSalesMap.get(salesList.get(0));
+							branchSalesMap.put(salesList.get(0), branchValue);
+						}
+
+						//商品コードが不正の場合、エラーメッセージ後に処理を終了
+						if(!salesList.get(1).matches("^[0-9].*[a-zA-Z]|[a-zA-Z].*[0-9].\\d{3}$")){
+							System.out.println("<" + fileList[i] + ">の商品コードが不正です");
+							return;
+						}
+						//商品コードに紐づく売上金を加算する処理
+						if(commodSalesMap.containsKey(salesList.get(1))){
+							//商品売上金額をint型の計算用変数にキャストして格納
+							long commodValue = Long.parseLong(salesList.get(2));
+							commodValue += commodSalesMap.get(salesList.get(1));
+							commodSalesMap.put(salesList.get(1), commodValue);
+						}
+						//ArrayListの要素をクリア
+						salesList.clear();
 					}
 				}
-				//ファイルパス指定して1ファイルずつ読み込み
-				File salesFile = new File(args[0],fileList[i]);
-
-				//読み込み範囲は拡張子が「.rcd」のファイルだけ読み込み
-				if(fileList[i].matches("^.*rcd.*$") && !salesFile.isDirectory()){
-
-					//売上ファイルの読み込み処理
-					FileReader salesFr = new FileReader(salesFile);
-					BufferedReader salesBr = new BufferedReader(salesFr);
-
-					//1ファイル内のデータをすべてaddしていく
-					while((salesLine = salesBr.readLine()) != null){
-						salesList.add(salesLine);
+			}catch(FileNotFoundException e){
+				e.printStackTrace();
+			}catch(IOException e){
+				e.printStackTrace();
+			}finally{
+				try{
+					if(salesBr != null){
+						salesBr.close();
+						if(salesFr != null){
+							salesFr.close();
+						}
 					}
-					//salesBrをクローズ
-					salesBr.close();
-
-					//要素数のチェック→要素数が3以外はエラーを返す
-					if(fileList[i].matches("^.*.rcd.*$") && !(salesList.size() == 3)){
-						System.out.println(fileList[i] + "のファイルフォーマットが不正です" );
-						return;
-					}
-					/*すでに生成されている支店売上マップと商品売上マップと
-					*読み込んできたファイル内のデータを比較して各コードが一致したら
-					*それぞれのマップの値をインクリメントする
-					 */
-					//支店コードチェックを行う
-					if(!(salesList.get(0).matches("^\\d{3}$"))){
-						System.out.println(fileList[i] + "の支店コードが不正です");
-						return;
-					}
-					//支店コードに紐づく売上金を加算する処理
-					if(branchSalesMap.containsKey(salesList.get(0))){
-						//支店売上金額をint型の計算用変数にキャストして格納
-						long branchValue = Long.parseLong(salesList.get(2));
-						branchValue += branchSalesMap.get(salesList.get(0));
-						branchSalesMap.put(salesList.get(0), branchValue);
-					}
-
-					//商品コードが不正の場合、エラーメッセージ後に処理を終了
-					if(!salesList.get(1).matches("^[0-9].*[a-zA-Z]|[a-zA-Z].*[0-9].\\d{3}$")){
-						System.out.println("<" + fileList[i] + ">の商品コードが不正です");
-						return;
-					}
-					//商品コードに紐づく売上金を加算する処理
-					if(commodSalesMap.containsKey(salesList.get(1))){
-						//商品売上金額をint型の計算用変数にキャストして格納
-						long commodValue = Long.parseLong(salesList.get(2));
-						commodValue += commodSalesMap.get(salesList.get(1));
-						commodSalesMap.put(salesList.get(1), commodValue);
-					}
-					//ArrayListの要素をクリア
-					salesList.clear();
+				}catch(IOException e2){
 				}
 			}
-
 			//---------------------------------------------------------------------------------
 			//集計結果をソート処理
 			//---------------------------------------------------------------------------------
@@ -243,34 +266,58 @@ public class CalculateSales {
 	                return ((Long)entry2.getValue()).compareTo((Long)entry1.getValue());
 	            }
 	        });
+
 			//---------------------------------------------------------------------------------
 			//集計結果を出力
 			//---------------------------------------------------------------------------------
 
-			//支店コードに対応する支店名と売上を出力
-			File branchOutfile = new File(args[0],"branch.out");
-			FileWriter branchOutfw = new FileWriter(branchOutfile);
-			BufferedWriter branchOutbw = new BufferedWriter(branchOutfw);
-			PrintWriter branchOutpw = new PrintWriter(branchOutbw);
+			//支店別ファイル出力用のWriterを生成
+			File branchOutfile = null;
+			FileWriter branchOutfw = null;
+			BufferedWriter branchOutbw = null;
+			PrintWriter branchOutpw = null;
 
-			 for (Entry<String,Long> branchEn : branchSortEntries) {
-				 branchOutpw.println(branchEn.getKey() + "," + branchMap.get(branchEn.getKey()) + "," + branchEn.getValue());
-			 }
-			 branchOutpw.close();
+			//商品別ファイル出力用のWriterを生成
+			File commodOutfile = null;
+			FileWriter commodOutfw = null;
+			BufferedWriter commodOutbw = null;
+			PrintWriter commodOutpw = null;
 
-			//商品コードに対応する商品名と売上を出力
-			File commodOutfile = new File(args[0],"commodity.out");
-			FileWriter commodOutfw = new FileWriter(commodOutfile);
-			BufferedWriter commodOutbw = new BufferedWriter(commodOutfw);
-			PrintWriter commodOutpw = new PrintWriter(commodOutbw);
+			try{
+				//支店コードに対応する支店名と売上金額を出力
+				branchOutfile = new File(args[0],"branch.out");
+				branchOutfw = new FileWriter(branchOutfile);
+				branchOutbw = new BufferedWriter(branchOutfw);
+				branchOutpw = new PrintWriter(branchOutbw);
 
-			for (Entry<String,Long> commodEn : commodSortEntries) {
-				commodOutpw.println(commodEn.getKey() + "," + commodMap.get(commodEn.getKey()) + "," + commodEn.getValue());
+				for (Entry<String,Long> branchEn : branchSortEntries) {
+					 branchOutpw.println(branchEn.getKey() + "," + branchMap.get(branchEn.getKey()) + "," + branchEn.getValue());
+				}
+
+				//商品コードに対応する商品名と売上金額を出力
+				commodOutfile = new File(args[0],"commodity.out");
+				commodOutfw = new FileWriter(commodOutfile);
+				commodOutbw = new BufferedWriter(commodOutfw);
+				commodOutpw = new PrintWriter(commodOutbw);
+
+				for (Entry<String,Long> commodEn : commodSortEntries) {
+					commodOutpw.println(commodEn.getKey() + "," + commodMap.get(commodEn.getKey()) + "," + commodEn.getValue());
+				}
+
+			}catch(FileNotFoundException e){
+				e.printStackTrace();
+			}catch(IOException e){
+				e.printStackTrace();
+			}finally{
+				if(branchOutpw != null){
+					branchOutpw.close();
+				}
+				if(commodOutpw != null){
+					commodOutpw.close();
+				}
 			}
-			commodOutpw.close();
-		}
-		catch(Exception e){
-			e.printStackTrace();
+		}catch(Exception e){
+		e.printStackTrace();
 			System.out.println("予期せぬエラーが発生しました");
 		}
 	}

@@ -163,7 +163,7 @@ public class CalculateSales {
 			for(int i = 0 ; i < fileList.length ; i++){
 
 				//「.rcd」の拡張子の場合のみif文の中を実行
-				if(fileList[i].getName().substring(0).matches("^\\d{8}\\.rcd$") && fileList[i].isFile()){
+				if(fileList[i].getName().matches("^\\d{8}\\.rcd$") && fileList[i].isFile()){
 
 					//連番チェックの為、「.」で文字列を分割する
 					String divstr = fileList[i].getName().substring(0, 8);
@@ -187,7 +187,7 @@ public class CalculateSales {
 					File salesFile = new File(args[0],fileList[i].getName());
 
 					//読み込み範囲は拡張子が「.rcd」のファイルだけ読み込み
-					if(fileList[i].getName().substring(0).matches("^\\d{8}\\.rcd$") && fileList[i].isFile()){
+					if(fileList[i].getName().matches("^\\d{8}\\.rcd$") && fileList[i].isFile()){
 
 						//売上ファイルの読み込み処理
 						salesFr = new FileReader(salesFile);
@@ -199,7 +199,7 @@ public class CalculateSales {
 						}
 
 						//要素数のチェック→要素数が3以外はエラーを返す
-						if(fileList[i].getName().substring(0).matches("^\\d{8}\\.rcd$") && !(salesList.size() == 3)){
+						if(fileList[i].getName().matches("^\\d{8}\\.rcd$") && !(salesList.size() == 3)){
 							System.out.println(fileList[i] + "のフォーマットが不正です" );
 							return;
 						}

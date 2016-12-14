@@ -23,6 +23,13 @@ public class CalculateSales {
 			//---------------------------------------------------------------------------------
 			//支店定義ファイルの読み込み及び保持
 			//---------------------------------------------------------------------------------
+
+			//コマンドライン引数の数が「1」以外の場合
+			if(!(args.length == 1)){
+				System.out.println("予期せぬエラーが発生しました");
+				return;
+			}
+
 			//ファイルパスを指定
 			File branchFile = new File(args[0],"branch.lst");
 
@@ -51,13 +58,12 @@ public class CalculateSales {
 				*/
 
 				while((branchLine = blanchBr.readLine()) != null){
-					String[] branchstr = branchLine.split(",");
+					String[] branchstr = branchLine.split(",", 0);
 					/*エラーチェック→ファイルフォーマットが不正か
 					*正規表現を用いてチェックし不正だったら処理を終了させる
 					*/
 					if(!(branchstr.length == 2) || !(branchstr[0].matches("^\\d{3}$"))){
 						System.out.println("支店定義ファイルのフォーマットが不正です");
-						//blanchBr.close();
 						return;
 					}
 					//定義ファイル内のデータをセット
@@ -67,16 +73,16 @@ public class CalculateSales {
 					branchSalesMap.put(branchstr[0], (long)0);
 				}
 			}catch(FileNotFoundException e){
-				e.printStackTrace();
+				System.out.println("予期せぬエラーが発生しました");
 			}catch(IOException e){
-				e.printStackTrace();
+				System.out.println("予期せぬエラーが発生しました");
 			}finally{
 				try{
 					if(blanchBr != null){
 						blanchBr.close();
 					}
 				}catch(IOException e){
-
+					System.out.println("予期せぬエラーが発生しました");
 				}
 			}
 			//---------------------------------------------------------------------------------
@@ -114,7 +120,7 @@ public class CalculateSales {
 					/*エラーチェック→ファイルフォーマットが不正か
 					*正規表現を用いてチェックし不正だったら処理を終了させる
 					*/
-					if(!(commodstr.length == 2) || !(commodstr[0].matches("^[0-9a-zA-Z].*{8}$"))){
+					if(!(commodstr.length == 2) || !(commodstr[0].matches("^\\w{8}$"))){
 						System.out.println("商品定義ファイルのフォーマットが不正です");
 						return;
 					}
@@ -124,17 +130,14 @@ public class CalculateSales {
 					commodSalesMap.put(commodstr[0], (long)0);
 				}
 			}catch(FileNotFoundException e){
-				e.printStackTrace();
+				System.out.println("予期せぬエラーが発生しました");
 			}catch(IOException e){
-				e.printStackTrace();
+				System.out.println("予期せぬエラーが発生しました");
 			}finally{
-				try{
-					if(commodBr != null){
-						commodBr.close();
-					}
-				}catch(IOException e){
-
+				if(commodBr != null){
+					commodBr.close();
 				}
+
 			}
 			//---------------------------------------------------------------------------------
 			//売上ファイルの読み込み及び保持、計算を行う
@@ -145,6 +148,7 @@ public class CalculateSales {
 			//for文で連番ファイルを読み込む
 			//フォルダ内のファイル名取得→「00000001.rcd」の部分
 			String[] fileList = dir.list();
+			//File[] fileList = dir.listFiles();
 
 			//ファイル内のデータを格納するためのArrayListを生成
 			ArrayList<String> salesList = new ArrayList<String>();
@@ -162,24 +166,22 @@ public class CalculateSales {
 
 					//「.rcd」の拡張子の場合のみif文の中を実行
 					if(fileList[i].matches("^\\d{8}.*(.rcd)$") && !dir.isDirectory()){
-
 						//連番チェックの為、「.」で文字列を分割する
 						String[] divstr = fileList[i].split("\\.");
-
 						//連番チェックの為、divstr[0]番に入っている分割した文字列の数字をint型に変換
 						long fileNameNum = Long.parseLong(divstr[0]);
-
 						//if文で連番チェック→fileNameNumとカウンターの「i」の差が「1」以外は処理を終了させる
 						if(!((fileNameNum - i) == 1)){
 							System.out.println("売上ファイル名が連番になっていません");
 							return;
 						}
 					}
+
 					//ファイルパス指定して1ファイルずつ読み込み
 					File salesFile = new File(args[0],fileList[i]);
 
 					//読み込み範囲は拡張子が「.rcd」のファイルだけ読み込み
-					if(fileList[i].matches("^\\d{8}.*(.rcd)$") && !salesFile.isDirectory()){
+					if(fileList[i].matches("^\\d{8}.*(.rcd)$")){
 
 						//売上ファイルの読み込み処理
 						salesFr = new FileReader(salesFile);
@@ -192,7 +194,7 @@ public class CalculateSales {
 
 						//要素数のチェック→要素数が3以外はエラーを返す
 						if(fileList[i].matches("^\\d{8}.*(.rcd)$") && !(salesList.size() == 3)){
-							System.out.println(fileList[i] + "のファイルフォーマットが不正です" );
+							System.out.println(fileList[i] + "のフォーマットが不正です" );
 							return;
 						}
 
@@ -245,10 +247,12 @@ public class CalculateSales {
 						salesList.clear();
 					}
 				}
+			}catch(NumberFormatException e){
+				System.out.println("予期せぬエラーが発生しました");
 			}catch(FileNotFoundException e){
-				e.printStackTrace();
+				System.out.println("予期せぬエラーが発生しました");
 			}catch(IOException e){
-				e.printStackTrace();
+				System.out.println("予期せぬエラーが発生しました");
 			}finally{
 				try{
 					if(salesBr != null){
@@ -258,6 +262,7 @@ public class CalculateSales {
 						}
 					}
 				}catch(IOException e2){
+					System.out.println("予期せぬエラーが発生しました");
 				}
 			}
 			//---------------------------------------------------------------------------------
@@ -320,9 +325,9 @@ public class CalculateSales {
 				}
 
 			}catch(FileNotFoundException e){
-				e.printStackTrace();
+				System.out.println("予期せぬエラーが発生しました");
 			}catch(IOException e){
-				e.printStackTrace();
+				System.out.println("予期せぬエラーが発生しました");
 			}finally{
 				if(branchOutpw != null){
 					branchOutpw.close();
@@ -332,7 +337,6 @@ public class CalculateSales {
 				}
 			}
 		}catch(Exception e){
-			e.printStackTrace();
 			System.out.println("予期せぬエラーが発生しました");
 		}
 	}

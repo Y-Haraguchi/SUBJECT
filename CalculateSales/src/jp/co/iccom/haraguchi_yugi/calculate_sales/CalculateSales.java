@@ -148,7 +148,6 @@ public class CalculateSales {
 			//for文で連番ファイルを読み込む
 			//フォルダ内のファイル名取得→「00000001.rcd」の部分
 			String[] fileList = dir.list();
-			//File[] fileList = dir.listFiles();
 
 			//ファイル内のデータを格納するためのArrayListを生成
 			ArrayList<String> salesList = new ArrayList<String>();
@@ -164,17 +163,25 @@ public class CalculateSales {
 				//繰り替えしてファイルを読み込み
 				for(int i = 0 ; i < fileList.length ; i++){
 
+					File jugeFile = new File(args[0],fileList[i]);
+
 					//「.rcd」の拡張子の場合のみif文の中を実行
-					if(fileList[i].matches("^\\d{8}.*(.rcd)$") && !dir.isDirectory()){
+					if(jugeFile.isFile() && fileList[i].matches("^\\d{8}.*(.rcd)$")){
+
 						//連番チェックの為、「.」で文字列を分割する
 						String[] divstr = fileList[i].split("\\.");
+
 						//連番チェックの為、divstr[0]番に入っている分割した文字列の数字をint型に変換
 						long fileNameNum = Long.parseLong(divstr[0]);
+						System.out.println(fileNameNum);
+
 						//if文で連番チェック→fileNameNumとカウンターの「i」の差が「1」以外は処理を終了させる
 						if(!((fileNameNum - i) == 1)){
 							System.out.println("売上ファイル名が連番になっていません");
 							return;
 						}
+					}else{
+
 					}
 
 					//ファイルパス指定して1ファイルずつ読み込み
@@ -248,6 +255,7 @@ public class CalculateSales {
 					}
 				}
 			}catch(NumberFormatException e){
+				e.printStackTrace();
 				System.out.println("予期せぬエラーが発生しました");
 			}catch(FileNotFoundException e){
 				System.out.println("予期せぬエラーが発生しました");
@@ -255,6 +263,7 @@ public class CalculateSales {
 				System.out.println("予期せぬエラーが発生しました");
 			}finally{
 				try{
+					commodBr.close();
 					if(salesBr != null){
 						salesBr.close();
 						if(salesFr != null){

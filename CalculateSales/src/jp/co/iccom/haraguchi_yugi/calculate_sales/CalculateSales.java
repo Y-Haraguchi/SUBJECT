@@ -18,8 +18,84 @@ import java.util.Map.Entry;
 
 //メイン処理
 public class CalculateSales {
+
+	//読み込み処理
+	File defineFile = null;
+	FileReader defineFr = null;
+	BufferedReader defineBr = null;
+
+	//支店定義ファイル内データをMapに値を保持するためのHashMapを生成
+	static HashMap<String,String> defineBrMap = null;
+
+	//商品定義ファイル内データをMapに値を保持するためのHashMapを生成
+	static HashMap<String,String> defineCoMap = null;
+
+	//売上ファイル内の値段を支店コードと紐付けるためのHashMapを生成
+	static HashMap<String, Long> brSalesMap = null;
+
+	//売上ファイル内の値段を商品コードと紐付けるためのHashMapを生成
+	static HashMap<String, Long> coSalesMap = null;
+
+	//一行ずつ読み込むための一時格納変数
+	String dfineFileLine;
+
+	//定義ファイル読み込みメソッド
+	void DefinFilesReader(String args, String filePath, String fileType, String regex, HashMap<String, String> dfMap,
+			HashMap<String, String> saMap, HashMap<String, Long> brSaMap, HashMap<String, Long> cosaMap) throws IOException{
+
+		//引数からファイルパスを受け取る
+		defineFile = new File(args, filePath);
+
+		//エラーチェック→ディレクトリを見に行った際に「branch.lst」がなかったら処理を終了させる
+		if(!defineFile.isFile() || !defineFile.exists()){
+			System.out.println(fileType + "定義ファイルが存在しません");
+			return;
+		}
+		//ここにはif文で例外を投げる処理を入れる
+		//ファイルの読み込み
+		defineFr = new FileReader(defineFile);
+		defineBr  = new BufferedReader(defineFr);
+
+		while((dfineFileLine = defineBr.readLine()) != null){
+			String[] dfineStr = dfineFileLine.split(",", 0);
+			/*エラーチェック→ファイルフォーマットが不正か
+			*正規表現を用いてチェックし不正だったら処理を終了させる
+			*/
+			if(!(dfineStr.length == 2) || !(dfineStr[0].matches(regex))){
+				System.out.println(fileType + "定義ファイルのフォーマットが不正です");
+				return;
+			}
+			//支店定義ファイル内のデータをセット
+			dfMap.put(dfineStr[0], dfineStr[1]);
+
+			//商品定義ファイル内のデータをセット
+			saMap.put(dfineStr[0], dfineStr[1]);
+
+			//支店の集計に使用する値の初期化
+			brSaMap.put(dfineStr[0], (long)0);
+
+			//商品の集計に使用する値の初期化
+			cosaMap.put(dfineStr[0], (long)0);
+		}
+	}
 	public static void main(String[] args) {
 		try{
+			//読み込みメソッドを使うためのインスタンスの生成
+			CalculateSales dfr = new CalculateSales();
+			//支店定義ファイル内データをMapに値を保持するためのHashMapを生成
+			HashMap<String,String> defineBrMap = new HashMap<String,String>();
+
+			//商品定義ファイル内データをMapに値を保持するためのHashMapを生成
+			HashMap<String,String> defineCoMap = new HashMap<String,String>();
+
+			//売上ファイル内の値段を支店コードと紐付けるためのHashMapを生成
+			HashMap<String, Long> brSalesMap = new HashMap<String, Long>();
+
+			//売上ファイル内の値段を商品コードと紐付けるためのHashMapを生成
+			HashMap<String, Long> coSalesMap = new HashMap<String, Long>();
+
+			//引数でメソッド
+
 			//---------------------------------------------------------------------------------
 			//支店定義ファイルの読み込み及び保持
 			//---------------------------------------------------------------------------------
@@ -29,49 +105,10 @@ public class CalculateSales {
 				System.out.println("予期せぬエラーが発生しました");
 				return;
 			}
-
-			//ファイルパスを指定
-			File branchFile = new File(args[0],"branch.lst");
-
-			//エラーチェック→ディレクトリを見に行った際に「branch.lst」がなかったら処理を終了させる
-			if(!branchFile.isFile() || !branchFile.exists()){
-				System.out.println("支店定義ファイルが存在しません");
-				return;
-			}
-			//読み込み処理
-			FileReader branchFr = new FileReader(branchFile);
-			BufferedReader blanchBr = new BufferedReader(branchFr);
-
-			//支店定義ファイルを読み込んでMapに値を保持
-			HashMap<String,String> branchMap = new HashMap<String,String>();
-
-			//売上ファイル内の値段を支店コードと紐付けるためのHashMapを生成
-			HashMap<String, Long> branchSalesMap = new HashMap<String, Long>();
-
-			//一行ずつ読み込むための一時格納変数
-			String branchLine;
-
 			try{
-				/*繰り返しの処理で一行ずつ読み込み、，を基準にsplitで文字分割を行い、
-				* splitで保持されたデータをHashMapのキーと値に設定する
-				* 読込先がnullなったらループを抜ける処理
-				*/
+				//支店コードファイル読み込み
+				//dfr.DefinFilesReader(args[0], "branch.lst");
 
-				while((branchLine = blanchBr.readLine()) != null){
-					String[] branchstr = branchLine.split(",", 0);
-					/*エラーチェック→ファイルフォーマットが不正か
-					*正規表現を用いてチェックし不正だったら処理を終了させる
-					*/
-					if(!(branchstr.length == 2) || !(branchstr[0].matches("^\\d{3}$"))){
-						System.out.println("支店定義ファイルのフォーマットが不正です");
-						return;
-					}
-					//定義ファイル内のデータをセット
-					branchMap.put(branchstr[0], branchstr[1]);
-
-					//集計に使用するHashMapを生成
-					branchSalesMap.put(branchstr[0], (long)0);
-				}
 			}catch(FileNotFoundException e){
 				System.out.println("予期せぬエラーが発生しました");
 				return;
@@ -80,8 +117,8 @@ public class CalculateSales {
 				return;
 			}finally{
 				try{
-					if(blanchBr != null){
-						blanchBr.close();
+					if(dfr.defineBr != null){
+						dfr.defineBr.close();
 					}
 				}catch(IOException e){
 					System.out.println("予期せぬエラーが発生しました");
@@ -90,16 +127,8 @@ public class CalculateSales {
 			}
 			//---------------------------------------------------------------------------------
 			//商品定義ファイルの読み込み及び保持
-			//---------------------------------------------------------------------------------
-			//ファイルパスを指定
-			File commodFile = new File(args[0],"commodity.lst");
-
-			//エラーチェック→ディレクトリを見に行った際に「commodity.lst」がなかったら処理を終了させる
-			if(!commodFile.isFile() || !commodFile.exists()){
-				System.out.println("商品定義ファイルが存在しません");
-				return;
-			}
-			//読み込み処理
+			//--------------------------------------------------------------------------------
+/*			//読み込み処理
 			FileReader commodFr = new FileReader(commodFile);
 			BufferedReader commodBr = new BufferedReader(commodFr);
 
@@ -111,8 +140,10 @@ public class CalculateSales {
 
 			//一行ずつ読み込むための一時格納変数
 			String commodLine;
-
+*/
 			try{
+				//ファイルパスを指定
+				dfr.DefinFilesReader(args[0], "commodity.lst");
 				/*繰り返しの処理で一行ずつ読み込み、，を基準にsplitで文字分割を行い、
 				* splitで保持されたデータをHashMapのキーと値に設定する
 				* 読込先がnullなったらループを抜ける処理
@@ -191,7 +222,7 @@ public class CalculateSales {
 					fNumList.add(Long.parseLong(fileNameList.get(i).substring(0, 8)));
 
 					//差が1以外の場合は連番になっていません
-					if(!fileList[i].getName().matches("^\\d{8}.rcd$") || !((fNumList.get(i) - i) == 1)){
+					if(!((fNumList.get(i) - i) == 1)){
 						System.out.println("売上ファイル名が連番になっていません");
 						return;
 					}
@@ -222,81 +253,72 @@ public class CalculateSales {
 			//売上ファイルの読み込み及び保持、計算を行う
 			//---------------------------------------------------------------------------------
 			try{
-				for(int i = 0 ; i < fileList.length ; i++){
+				for(int i = 0 ; i < fileNameList.size() ; i++){
 
 					//ファイルパス指定して1ファイルずつ読み込み
 					File salesFile = new File(args[0],fileList[i].getName());
 
-					//読み込み範囲は拡張子が「.rcd」のファイルだけ読み込み
-					if(fileList[i].getName().matches("^\\d{8}\\.rcd$") && fileList[i].isFile()){
+					//売上ファイルの読み込み処理
+					salesFr = new FileReader(salesFile);
+					salesBr = new BufferedReader(salesFr);
 
-						//売上ファイルの読み込み処理
-						salesFr = new FileReader(salesFile);
-						salesBr = new BufferedReader(salesFr);
+					//1ファイル内のデータをすべてaddしていく
+					while((salesLine = salesBr.readLine()) != null){
+						salesList.add(salesLine);
+					}
 
-						//1ファイル内のデータをすべてaddしていく
-						while((salesLine = salesBr.readLine()) != null){
-							salesList.add(salesLine);
-						}
-
-						//要素数のチェック→要素数が3以外はエラーを返す
-						if(fileList[i].getName().matches("^\\d{8}\\.rcd$") && !(salesList.size() == 3)){
-							System.out.println(fileList[i].getName() + "のフォーマットが不正です" );
-							return;
-						}
-
-						//計算を行う前に売上ファイルの３行目に数字以外の文字列が入っていたらエラーを返して処理を終了
-						if(salesList.get(2).matches("^\\d$")){
-							return;
-						}
-
-						/*すでに生成されている支店売上マップと商品売上マップと
-						*読み込んできたファイル内のデータを比較して各コードが一致したら
-						*それぞれのマップの値をインクリメントする
-						 */
-						//支店コードチェックを行う
-						if(!(branchSalesMap.containsKey(salesList.get(0)))){
+					//要素数のチェック→要素数が3以外はエラーを返す
+					if((salesList.size() != 3)){
+						System.out.println(fileList[i].getName() + "のフォーマットが不正です" );
+						return;
+					}
+					/*すでに生成されている支店売上マップと商品売上マップと
+					*読み込んできたファイル内のデータを比較して各コードが一致したら
+					*それぞれのマップの値をインクリメントする
+					 */
+					//支店コードチェックを行う
+					if(!(branchSalesMap.containsKey(salesList.get(0)))){
 							System.out.println(fileList[i].getName() + "の支店コードが不正です");
 							return;
-						}
-						//支店コードに紐づく売上金を加算する処理
-						if(branchSalesMap.containsKey(salesList.get(0))){
-							//支店売上金額をint型の計算用変数にキャストして格納
-							long branchValue = Long.parseLong(salesList.get(2));
-							branchValue += branchSalesMap.get(salesList.get(0));
-							branchSalesMap.put(salesList.get(0), branchValue);
+					}
+					//支店コードに紐づく売上金を加算する処理
+					if(branchSalesMap.containsKey(salesList.get(0))){
 
-							//branchSalesMapに保持されている合計金額が10桁以上の場合エラーを返す
-							if(String.valueOf(branchValue).length() > 10){
-								System.out.println("合計金額が10桁を超えました");
-								return;
-							}
-						}
+						//支店売上金額をint型の計算用変数にキャストして格納
+						long branchValue = Long.parseLong(salesList.get(2));
+						branchValue += branchSalesMap.get(salesList.get(0));
+						branchSalesMap.put(salesList.get(0), branchValue);
 
-						//商品コードが不正の場合、エラーメッセージ後に処理を終了
-						if(!commodSalesMap.containsKey(salesList.get(1))){
-							System.out.println(fileList[i] + "の商品コードが不正です");
+						//branchSalesMapに保持されている合計金額が10桁以上の場合エラーを返す
+						if(String.valueOf(branchValue).length() > 10){
+							System.out.println("合計金額が10桁を超えました");
 							return;
 						}
-						//商品コードに紐づく売上金を加算する処理
-						if(commodSalesMap.containsKey(salesList.get(1))){
-							//商品売上金額をint型の計算用変数にキャストして格納
-							long commodValue = Long.parseLong(salesList.get(2));
-							commodValue += commodSalesMap.get(salesList.get(1));
-							commodSalesMap.put(salesList.get(1), commodValue);
-							//commodSalesMapに保持されている合計金額が10桁以上の場合エラーを返す
-							if(String.valueOf(commodValue).length() > 10){
-								System.out.println("合計金額が10桁を超えました");
-								return;
-							}
-						}
-						//ArrayListの要素をクリア
-						salesList.clear();
-					}else{
-						//売上ファイル以外が読み込まれたらここに来て計算処理をbreakして次の処理へ
-						break;
 					}
+
+					//商品コードが不正の場合、エラーメッセージ後に処理を終了
+					if(!commodSalesMap.containsKey(salesList.get(1))){
+						System.out.println(fileList[i].getName() + "の商品コードが不正です");
+						return;
+					}
+					//商品コードに紐づく売上金を加算する処理
+					if(commodSalesMap.containsKey(salesList.get(1))){
+
+						//商品売上金額をint型の計算用変数にキャストして格納
+						long commodValue = Long.parseLong(salesList.get(2));
+						commodValue += commodSalesMap.get(salesList.get(1));
+						commodSalesMap.put(salesList.get(1), commodValue);
+
+						//commodSalesMapに保持されている合計金額が10桁以上の場合エラーを返す
+						if(String.valueOf(commodValue).length() > 10){
+							System.out.println("合計金額が10桁を超えました");
+							return;
+						}
+					}
+					//ArrayListの要素をクリア
+					salesList.clear();
 				}
+
 			}catch(NumberFormatException e){
 				System.out.println("予期せぬエラーが発生しました");
 				return;

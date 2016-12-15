@@ -74,8 +74,10 @@ public class CalculateSales {
 				}
 			}catch(FileNotFoundException e){
 				System.out.println("予期せぬエラーが発生しました");
+				return;
 			}catch(IOException e){
 				System.out.println("予期せぬエラーが発生しました");
+				return;
 			}finally{
 				try{
 					if(blanchBr != null){
@@ -83,6 +85,7 @@ public class CalculateSales {
 					}
 				}catch(IOException e){
 					System.out.println("予期せぬエラーが発生しました");
+					return;
 				}
 			}
 			//---------------------------------------------------------------------------------
@@ -131,16 +134,21 @@ public class CalculateSales {
 				}
 			}catch(FileNotFoundException e){
 				System.out.println("予期せぬエラーが発生しました");
+				return;
 			}catch(IOException e){
 				System.out.println("予期せぬエラーが発生しました");
+				return;
 			}finally{
+				if(blanchBr != null){
+					blanchBr.close();
+				}
 				if(commodBr != null){
 					commodBr.close();
 				}
 
 			}
 			//---------------------------------------------------------------------------------
-			//売上ファイルの読み込み及び保持、計算を行う
+			//売上ファイルの連番チェック
 			//---------------------------------------------------------------------------------
 			//フォルダのパスを指定
 			File dir = new File(args[0]);
@@ -159,30 +167,63 @@ public class CalculateSales {
 			FileReader salesFr = null;
 			BufferedReader salesBr = null;
 
-			//繰り替えしてファイルを読み込み
-			for(int i = 0 ; i < fileList.length ; i++){
+			//「.rcd」抽出用リスト
+			ArrayList<String> fileNameList = new ArrayList<String>();
 
-				//「.rcd」の拡張子の場合のみif文の中を実行
-				if(fileList[i].getName().matches("^\\d{8}\\.rcd$") && fileList[i].isFile()){
+			//連番チェック用リスト
+			ArrayList<Long> fNumList = new ArrayList<Long>();
 
-					//連番チェックの為、「.」で文字列を分割する
-					String divstr = fileList[i].getName().substring(0, 8);
+			try{
+				//繰り返し処理で「.rcd」だけを抽出
+				for(int i = 0 ; i < fileList.length ; i++){
 
-					//連番チェックの為、divstr[0]番に入っている分割した文字列の数字をint型に変換
-					long fileNameNum = Long.parseLong(divstr);
+					//「.rcd」の拡張子の場合のみif文の中を実行
+					if(fileList[i].getName().matches("^\\d{8}\\.rcd$") && fileList[i].isFile()){
+						//連番チェックの為、「.rcd」の拡張子がついたファイルのみ抽出
+						fileNameList.add(fileList[i].getName());
+					}
+				}
 
-					//if文で連番チェック→fileNameNumとカウンターの「i」の差が「1」以外は処理を終了させる
-					if(!((fileNameNum - i) == 1)){
+				//if文で連番チェック→fileNameListとカウンターの「i」の差が「1」以外は処理を終了させる
+				for(int i = 0 ; i < fileNameList.size() ; i++){
+
+					//差の計算を行うためにファイル名を数値部分のみ取り出してadd
+					fNumList.add(Long.parseLong(fileNameList.get(i).substring(0, 8)));
+
+					//差が1以外の場合は連番になっていません
+					if(!fileList[i].getName().matches("^\\d{8}.rcd$") || !((fNumList.get(i) - i) == 1)){
 						System.out.println("売上ファイル名が連番になっていません");
 						return;
 					}
-				}else{
-					break;
+				}
+			}catch(Exception e){
+				System.out.println("予期せぬエラーが発生しました");
+				return;
+			}finally{
+				try{
+					if(blanchBr != null){
+						blanchBr.close();
+					}
+					if(commodBr != null){
+						commodBr.close();
+					}
+					if(salesBr != null){
+						salesBr.close();
+					}
+					if(salesFr != null){
+						salesFr.close();
+					}
+				}catch(IOException e2){
+					System.out.println("予期せぬエラーが発生しました");
+					return;
 				}
 			}
-
+			//---------------------------------------------------------------------------------
+			//売上ファイルの読み込み及び保持、計算を行う
+			//---------------------------------------------------------------------------------
 			try{
 				for(int i = 0 ; i < fileList.length ; i++){
+
 					//ファイルパス指定して1ファイルずつ読み込み
 					File salesFile = new File(args[0],fileList[i].getName());
 
@@ -200,7 +241,7 @@ public class CalculateSales {
 
 						//要素数のチェック→要素数が3以外はエラーを返す
 						if(fileList[i].getName().matches("^\\d{8}\\.rcd$") && !(salesList.size() == 3)){
-							System.out.println(fileList[i] + "のフォーマットが不正です" );
+							System.out.println(fileList[i].getName() + "のフォーマットが不正です" );
 							return;
 						}
 
@@ -215,7 +256,7 @@ public class CalculateSales {
 						 */
 						//支店コードチェックを行う
 						if(!(branchSalesMap.containsKey(salesList.get(0)))){
-							System.out.println(fileList[i] + "の支店コードが不正です");
+							System.out.println(fileList[i].getName() + "の支店コードが不正です");
 							return;
 						}
 						//支店コードに紐づく売上金を加算する処理
@@ -224,12 +265,12 @@ public class CalculateSales {
 							long branchValue = Long.parseLong(salesList.get(2));
 							branchValue += branchSalesMap.get(salesList.get(0));
 							branchSalesMap.put(salesList.get(0), branchValue);
+
 							//branchSalesMapに保持されている合計金額が10桁以上の場合エラーを返す
 							if(String.valueOf(branchValue).length() > 10){
 								System.out.println("合計金額が10桁を超えました");
 								return;
 							}
-
 						}
 
 						//商品コードが不正の場合、エラーメッセージ後に処理を終了
@@ -244,7 +285,7 @@ public class CalculateSales {
 							commodValue += commodSalesMap.get(salesList.get(1));
 							commodSalesMap.put(salesList.get(1), commodValue);
 							//commodSalesMapに保持されている合計金額が10桁以上の場合エラーを返す
-							if(String.valueOf(commodValue).length() >= 10){
+							if(String.valueOf(commodValue).length() > 10){
 								System.out.println("合計金額が10桁を超えました");
 								return;
 							}
@@ -252,30 +293,36 @@ public class CalculateSales {
 						//ArrayListの要素をクリア
 						salesList.clear();
 					}else{
+						//売上ファイル以外が読み込まれたらここに来て計算処理をbreakして次の処理へ
 						break;
 					}
 				}
 			}catch(NumberFormatException e){
-				e.printStackTrace();
 				System.out.println("予期せぬエラーが発生しました");
+				return;
 			}catch(FileNotFoundException e){
-				e.printStackTrace();
 				System.out.println("予期せぬエラーが発生しました");
+				return;
 			}catch(IOException e){
-				e.printStackTrace();
 				System.out.println("予期せぬエラーが発生しました");
+				return;
 			}finally{
 				try{
-					commodBr.close();
+					if(blanchBr != null){
+						blanchBr.close();
+					}
+					if(commodBr != null){
+						commodBr.close();
+					}
 					if(salesBr != null){
 						salesBr.close();
-						if(salesFr != null){
-							salesFr.close();
-						}
+					}
+					if(salesFr != null){
+						salesFr.close();
 					}
 				}catch(IOException e2){
-					e2.printStackTrace();
 					System.out.println("予期せぬエラーが発生しました");
+					return;
 				}
 			}
 			//---------------------------------------------------------------------------------
@@ -317,41 +364,81 @@ public class CalculateSales {
 			PrintWriter commodOutpw = null;
 
 			try{
-				//支店コードに対応する支店名と売上金額を出力
+				//branch.outというファイルを出力
 				branchOutfile = new File(args[0],"branch.out");
 				branchOutfw = new FileWriter(branchOutfile);
 				branchOutbw = new BufferedWriter(branchOutfw);
 				branchOutpw = new PrintWriter(branchOutbw);
 
-				for (Entry<String,Long> branchEn : branchSortEntries) {
-					 branchOutpw.println(branchEn.getKey() + "," + branchMap.get(branchEn.getKey()) + "," + branchEn.getValue());
-				}
-
-				//商品コードに対応する商品名と売上金額を出力
+				//commodity.outというファイルを出力
 				commodOutfile = new File(args[0],"commodity.out");
 				commodOutfw = new FileWriter(commodOutfile);
 				commodOutbw = new BufferedWriter(commodOutfw);
 				commodOutpw = new PrintWriter(commodOutbw);
 
+				//書き込み先のファイルが存在しなかったら処理を終了
+				if(!branchOutfile.isFile() && !commodOutfile.isFile()){
+					System.out.println("予期せぬエラーが発生しました");
+					return;
+				}
+
+				//Mapで保持されている支店関係のデータをファイルに書き込み
+				for (Entry<String,Long> branchEn : branchSortEntries) {
+					//書き込むデータが空でないならば書き込み処理を行う
+					if(!branchEn.getKey().isEmpty() && !branchMap.get(branchEn.getKey()).isEmpty() && branchEn.getValue() == null){
+						System.out.println("予期せぬエラーが発生しました");
+						return;
+					}
+					branchOutpw.println(branchEn.getKey() + "," + branchMap.get(branchEn.getKey()) + "," + branchEn.getValue());
+				}
+				//Mapで保持されている商品関係のデータをファイルに書き込み
 				for (Entry<String,Long> commodEn : commodSortEntries) {
+					//書き込むデータが空でないならば書き込み処理を行う
+					if(!commodEn.getKey().isEmpty() && !commodMap.get(commodEn.getKey()).isEmpty() && commodEn.getValue() == null){
+						System.out.println("予期せぬエラーが発生しました");
+						return;
+					}
 					commodOutpw.println(commodEn.getKey() + "," + commodMap.get(commodEn.getKey()) + "," + commodEn.getValue());
 				}
 
 			}catch(FileNotFoundException e){
 				System.out.println("予期せぬエラーが発生しました");
+				return;
 			}catch(IOException e){
 				System.out.println("予期せぬエラーが発生しました");
+				return;
 			}finally{
+				if(blanchBr != null){
+					blanchBr.close();
+				}
 				if(branchOutpw != null){
 					branchOutpw.close();
+				}
+				if(branchOutbw != null){
+					branchOutbw.close();
+				}
+				if(branchOutfw != null){
+					branchOutfw.close();
+				}
+				if(salesBr != null){
+					salesBr.close();
+				}
+				if(commodBr != null){
+					commodBr.close();
 				}
 				if(commodOutpw != null){
 					commodOutpw.close();
 				}
+				if(commodOutbw != null){
+					commodOutbw.close();
+				}
+				if(commodOutfw != null){
+					commodOutfw.close();
+				}
 			}
 		}catch(Exception e){
-			e.printStackTrace();
 			System.out.println("予期せぬエラーが発生しました");
+			return;
 		}
 	}
 

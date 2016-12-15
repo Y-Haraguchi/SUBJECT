@@ -16,7 +16,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-//メイン処理
 public class CalculateSales {
 
 	//読み込み処理
@@ -25,23 +24,19 @@ public class CalculateSales {
 	BufferedReader defineBr = null;
 
 	//支店定義ファイル内データをMapに値を保持するためのHashMapを生成
-	static HashMap<String,String> defineBrMap = null;
-
+	static Map<String,String> defineBrMap = null;
 	//商品定義ファイル内データをMapに値を保持するためのHashMapを生成
-	static HashMap<String,String> defineCoMap = null;
-
+	static Map<String,String> defineCoMap = null;
 	//売上ファイル内の値段を支店コードと紐付けるためのHashMapを生成
-	static HashMap<String, Long> brSalesMap = null;
-
+	static Map<String, Long> brSalesMap = null;
 	//売上ファイル内の値段を商品コードと紐付けるためのHashMapを生成
-	static HashMap<String, Long> coSalesMap = null;
-
+	static Map<String, Long> coSalesMap = null;
 	//一行ずつ読み込むための一時格納変数
 	String dfineFileLine;
 
-	//定義ファイル読み込みメソッド
-	void DefinFilesReader(String args, String filePath, String fileType, String regex, HashMap<String, String> dfMap,
-			HashMap<String, String> saMap, HashMap<String, Long> brSaMap, HashMap<String, Long> cosaMap) throws IOException{
+	//定義ファイル入力メソッド
+	void DefinFilesReader(String args, String filePath, String fileType, String regex,
+			Map<String, String> dfMap, Map<String, Long> saMap) throws IOException{
 
 		//引数からファイルパスを受け取る
 		defineFile = new File(args, filePath);
@@ -52,49 +47,68 @@ public class CalculateSales {
 			return;
 		}
 		//ここにはif文で例外を投げる処理を入れる
+
 		//ファイルの読み込み
 		defineFr = new FileReader(defineFile);
 		defineBr  = new BufferedReader(defineFr);
 
 		while((dfineFileLine = defineBr.readLine()) != null){
-			String[] dfineStr = dfineFileLine.split(",", 0);
-			/*エラーチェック→ファイルフォーマットが不正か
-			*正規表現を用いてチェックし不正だったら処理を終了させる
-			*/
-			if(!(dfineStr.length == 2) || !(dfineStr[0].matches(regex))){
+			String[] strLine = dfineFileLine.split(",", 0);
+			//エラーチェック→ファイルフォーマットが不正か
+			if(!(strLine.length == 2) || !(strLine[0].matches(regex))){
 				System.out.println(fileType + "定義ファイルのフォーマットが不正です");
 				return;
 			}
-			//支店定義ファイル内のデータをセット
-			dfMap.put(dfineStr[0], dfineStr[1]);
-
-			//商品定義ファイル内のデータをセット
-			saMap.put(dfineStr[0], dfineStr[1]);
-
-			//支店の集計に使用する値の初期化
-			brSaMap.put(dfineStr[0], (long)0);
-
-			//商品の集計に使用する値の初期化
-			cosaMap.put(dfineStr[0], (long)0);
+			//定義ファイル内のデータをセット
+			dfMap.put(strLine[0], strLine[1]);
+			//集計に使用する値の初期化
+			saMap.put(strLine[0], (long)0);
 		}
 	}
+
+	//支店別ファイル出力用のWriterを生成
+	File sheetOutfile = null;
+	FileWriter sheetOutfw = null;
+	BufferedWriter sheetOutbw = null;
+	PrintWriter sheetOutpw = null;
+
+	//集計表ファイル出力メソッド
+	void SpreadSheetWriter(String args, String filePath,
+			List<Entry<String, Long>> sortEntries, Map<String, String> dfineMap)throws IOException{
+
+		sheetOutfile = new File(args, filePath);
+		sheetOutfw = new FileWriter(sheetOutfile);
+		sheetOutbw = new BufferedWriter(sheetOutfw);
+		sheetOutpw = new PrintWriter(sheetOutbw);
+
+		//書き込み先のファイルが存在しなかったら処理を終了
+		if(!sheetOutfile.isFile()){
+			System.out.println("予期せぬエラーが発生しました");
+			return;
+		}
+		//Mapで保持されている支店関係のデータをファイルに書き込み
+		for (Entry<String,Long> sortEn : sortEntries) {
+			//書き込むデータが空でないならば書き込み処理を行う
+			if(!sortEn.getKey().isEmpty() && !dfineMap.get(sortEn.getKey()).isEmpty() && sortEn.getValue() == null){
+				System.out.println("予期せぬエラーが発生しました");
+				return;
+			}
+			System.out.println(sortEntries);
+			sheetOutpw.println(sortEn.getKey() + "," + dfineMap.get(sortEn.getKey()) + "," + sortEn.getValue());
+		}
+	}
+
+
 	public static void main(String[] args) {
 		try{
 			//読み込みメソッドを使うためのインスタンスの生成
 			CalculateSales dfr = new CalculateSales();
-			//支店定義ファイル内データをMapに値を保持するためのHashMapを生成
-			HashMap<String,String> defineBrMap = new HashMap<String,String>();
 
-			//商品定義ファイル内データをMapに値を保持するためのHashMapを生成
-			HashMap<String,String> defineCoMap = new HashMap<String,String>();
-
-			//売上ファイル内の値段を支店コードと紐付けるためのHashMapを生成
-			HashMap<String, Long> brSalesMap = new HashMap<String, Long>();
-
-			//売上ファイル内の値段を商品コードと紐付けるためのHashMapを生成
-			HashMap<String, Long> coSalesMap = new HashMap<String, Long>();
-
-			//引数でメソッド
+			//各マップを生成
+			CalculateSales.defineBrMap = new HashMap<String, String>();
+			CalculateSales.brSalesMap = new HashMap<String, Long>();
+			CalculateSales.defineCoMap = new HashMap<String, String>();
+			CalculateSales.coSalesMap = new HashMap<String, Long>();
 
 			//---------------------------------------------------------------------------------
 			//支店定義ファイルの読み込み及び保持
@@ -106,8 +120,8 @@ public class CalculateSales {
 				return;
 			}
 			try{
-				//支店コードファイル読み込み
-				//dfr.DefinFilesReader(args[0], "branch.lst");
+				//支店定義ファイルを読み込むためメソッドを呼び出し
+				dfr.DefinFilesReader(args[0], "branch.lst", "支店", "^\\d{3}$", defineBrMap, brSalesMap);
 
 			}catch(FileNotFoundException e){
 				System.out.println("予期せぬエラーが発生しました");
@@ -128,41 +142,10 @@ public class CalculateSales {
 			//---------------------------------------------------------------------------------
 			//商品定義ファイルの読み込み及び保持
 			//--------------------------------------------------------------------------------
-/*			//読み込み処理
-			FileReader commodFr = new FileReader(commodFile);
-			BufferedReader commodBr = new BufferedReader(commodFr);
-
-			//支店定義ファイルを読み込んでMapに値を保持
-			HashMap<String,String> commodMap = new HashMap<String,String>();
-
-			//売上ファイル内の値段を商品コードと紐付けるためのHashMapを生成
-			HashMap<String, Long> commodSalesMap = new HashMap<String, Long>();
-
-			//一行ずつ読み込むための一時格納変数
-			String commodLine;
-*/
 			try{
-				//ファイルパスを指定
-				dfr.DefinFilesReader(args[0], "commodity.lst");
-				/*繰り返しの処理で一行ずつ読み込み、，を基準にsplitで文字分割を行い、
-				* splitで保持されたデータをHashMapのキーと値に設定する
-				* 読込先がnullなったらループを抜ける処理
-				*/
-				while((commodLine = commodBr.readLine()) != null){
-					String[] commodstr = commodLine.split(",");
+				//商品定義ファイルを読み込むためメソッドを呼び出し
+				dfr.DefinFilesReader(args[0], "commodity.lst", "商品", "^\\w{8}$", defineCoMap, coSalesMap);
 
-					/*エラーチェック→ファイルフォーマットが不正か
-					*正規表現を用いてチェックし不正だったら処理を終了させる
-					*/
-					if(!(commodstr.length == 2) || !(commodstr[0].matches("^\\w{8}$"))){
-						System.out.println("商品定義ファイルのフォーマットが不正です");
-						return;
-					}
-					//定義ファイル内のデータを登録
-					commodMap.put(commodstr[0], commodstr[1]);
-					//集計に使用するマップの初期化
-					commodSalesMap.put(commodstr[0], (long)0);
-				}
 			}catch(FileNotFoundException e){
 				System.out.println("予期せぬエラーが発生しました");
 				return;
@@ -170,11 +153,11 @@ public class CalculateSales {
 				System.out.println("予期せぬエラーが発生しました");
 				return;
 			}finally{
-				if(blanchBr != null){
-					blanchBr.close();
+				if(dfr.defineBr != null){
+					dfr.defineBr.close();
 				}
-				if(commodBr != null){
-					commodBr.close();
+				if(dfr.defineBr != null){
+					dfr.defineBr.close();
 				}
 
 			}
@@ -232,12 +215,6 @@ public class CalculateSales {
 				return;
 			}finally{
 				try{
-					if(blanchBr != null){
-						blanchBr.close();
-					}
-					if(commodBr != null){
-						commodBr.close();
-					}
 					if(salesBr != null){
 						salesBr.close();
 					}
@@ -277,17 +254,17 @@ public class CalculateSales {
 					*それぞれのマップの値をインクリメントする
 					 */
 					//支店コードチェックを行う
-					if(!(branchSalesMap.containsKey(salesList.get(0)))){
+					if(!(CalculateSales.brSalesMap.containsKey(salesList.get(0)))){
 							System.out.println(fileList[i].getName() + "の支店コードが不正です");
 							return;
 					}
 					//支店コードに紐づく売上金を加算する処理
-					if(branchSalesMap.containsKey(salesList.get(0))){
+					if(CalculateSales.brSalesMap.containsKey(salesList.get(0))){
 
 						//支店売上金額をint型の計算用変数にキャストして格納
 						long branchValue = Long.parseLong(salesList.get(2));
-						branchValue += branchSalesMap.get(salesList.get(0));
-						branchSalesMap.put(salesList.get(0), branchValue);
+						branchValue += CalculateSales.brSalesMap.get(salesList.get(0));
+						CalculateSales.brSalesMap.put(salesList.get(0), branchValue);
 
 						//branchSalesMapに保持されている合計金額が10桁以上の場合エラーを返す
 						if(String.valueOf(branchValue).length() > 10){
@@ -297,17 +274,17 @@ public class CalculateSales {
 					}
 
 					//商品コードが不正の場合、エラーメッセージ後に処理を終了
-					if(!commodSalesMap.containsKey(salesList.get(1))){
+					if(!CalculateSales.coSalesMap.containsKey(salesList.get(1))){
 						System.out.println(fileList[i].getName() + "の商品コードが不正です");
 						return;
 					}
 					//商品コードに紐づく売上金を加算する処理
-					if(commodSalesMap.containsKey(salesList.get(1))){
+					if(CalculateSales.coSalesMap.containsKey(salesList.get(1))){
 
 						//商品売上金額をint型の計算用変数にキャストして格納
 						long commodValue = Long.parseLong(salesList.get(2));
-						commodValue += commodSalesMap.get(salesList.get(1));
-						commodSalesMap.put(salesList.get(1), commodValue);
+						commodValue += CalculateSales.coSalesMap.get(salesList.get(1));
+						CalculateSales.coSalesMap.put(salesList.get(1), commodValue);
 
 						//commodSalesMapに保持されている合計金額が10桁以上の場合エラーを返す
 						if(String.valueOf(commodValue).length() > 10){
@@ -320,6 +297,7 @@ public class CalculateSales {
 				}
 
 			}catch(NumberFormatException e){
+				e.printStackTrace();
 				System.out.println("予期せぬエラーが発生しました");
 				return;
 			}catch(FileNotFoundException e){
@@ -330,12 +308,6 @@ public class CalculateSales {
 				return;
 			}finally{
 				try{
-					if(blanchBr != null){
-						blanchBr.close();
-					}
-					if(commodBr != null){
-						commodBr.close();
-					}
 					if(salesBr != null){
 						salesBr.close();
 					}
@@ -351,7 +323,7 @@ public class CalculateSales {
 			//集計結果をソート処理
 			//---------------------------------------------------------------------------------
 			//支店売上金額のソート用のListを生成
-			List<Map.Entry<String, Long>> branchSortEntries = new ArrayList<Map.Entry<String, Long>>(branchSalesMap.entrySet());
+			List<Map.Entry<String, Long>> branchSortEntries = new ArrayList<Map.Entry<String, Long>>(CalculateSales.brSalesMap.entrySet());
 			Collections.sort(branchSortEntries, new Comparator<Map.Entry<String,Long>>() {
 			//オーバーライド@Override		//アノテーション
 				public int compare(
@@ -360,7 +332,7 @@ public class CalculateSales {
 	            }
 	        });
 	        //商品売上金額のソート用のListを生成
-			List<Map.Entry<String, Long>> commodSortEntries = new ArrayList<Map.Entry<String, Long>>(commodSalesMap.entrySet());
+			List<Map.Entry<String, Long>> commodSortEntries = new ArrayList<Map.Entry<String, Long>>(CalculateSales.coSalesMap.entrySet());
 			Collections.sort(commodSortEntries, new Comparator<Map.Entry<String,Long>>() {
 				 //オーバーライド
 				@Override		//アノテーション
@@ -369,59 +341,19 @@ public class CalculateSales {
 	            }
 	        });
 
+			/*System.out.println(branchSortEntries);
+			System.out.println(commodSortEntries);*/
+
 			//---------------------------------------------------------------------------------
 			//集計結果を出力
 			//---------------------------------------------------------------------------------
 
-			//支店別ファイル出力用のWriterを生成
-			File branchOutfile = null;
-			FileWriter branchOutfw = null;
-			BufferedWriter branchOutbw = null;
-			PrintWriter branchOutpw = null;
-
-			//商品別ファイル出力用のWriterを生成
-			File commodOutfile = null;
-			FileWriter commodOutfw = null;
-			BufferedWriter commodOutbw = null;
-			PrintWriter commodOutpw = null;
-
 			try{
-				//branch.outというファイルを出力
-				branchOutfile = new File(args[0],"branch.out");
-				branchOutfw = new FileWriter(branchOutfile);
-				branchOutbw = new BufferedWriter(branchOutfw);
-				branchOutpw = new PrintWriter(branchOutbw);
 
-				//commodity.outというファイルを出力
-				commodOutfile = new File(args[0],"commodity.out");
-				commodOutfw = new FileWriter(commodOutfile);
-				commodOutbw = new BufferedWriter(commodOutfw);
-				commodOutpw = new PrintWriter(commodOutbw);
-
-				//書き込み先のファイルが存在しなかったら処理を終了
-				if(!branchOutfile.isFile() && !commodOutfile.isFile()){
-					System.out.println("予期せぬエラーが発生しました");
-					return;
-				}
-
-				//Mapで保持されている支店関係のデータをファイルに書き込み
-				for (Entry<String,Long> branchEn : branchSortEntries) {
-					//書き込むデータが空でないならば書き込み処理を行う
-					if(!branchEn.getKey().isEmpty() && !branchMap.get(branchEn.getKey()).isEmpty() && branchEn.getValue() == null){
-						System.out.println("予期せぬエラーが発生しました");
-						return;
-					}
-					branchOutpw.println(branchEn.getKey() + "," + branchMap.get(branchEn.getKey()) + "," + branchEn.getValue());
-				}
-				//Mapで保持されている商品関係のデータをファイルに書き込み
-				for (Entry<String,Long> commodEn : commodSortEntries) {
-					//書き込むデータが空でないならば書き込み処理を行う
-					if(!commodEn.getKey().isEmpty() && !commodMap.get(commodEn.getKey()).isEmpty() && commodEn.getValue() == null){
-						System.out.println("予期せぬエラーが発生しました");
-						return;
-					}
-					commodOutpw.println(commodEn.getKey() + "," + commodMap.get(commodEn.getKey()) + "," + commodEn.getValue());
-				}
+				//支店集計別ファイルを出力するメソッドを呼び出し
+				dfr.SpreadSheetWriter(args[0], "branch.out", branchSortEntries, defineBrMap);
+				//商品集計別ファイルを出力するメソッドを呼び出し
+				dfr.SpreadSheetWriter(args[0], "commodity.out", commodSortEntries, defineCoMap);
 
 			}catch(FileNotFoundException e){
 				System.out.println("予期せぬエラーが発生しました");
@@ -430,32 +362,17 @@ public class CalculateSales {
 				System.out.println("予期せぬエラーが発生しました");
 				return;
 			}finally{
-				if(blanchBr != null){
-					blanchBr.close();
+				if(dfr.sheetOutpw != null){
+					dfr.sheetOutpw.close();
 				}
-				if(branchOutpw != null){
-					branchOutpw.close();
+				if(dfr.sheetOutbw != null){
+					dfr.sheetOutbw.close();
 				}
-				if(branchOutbw != null){
-					branchOutbw.close();
-				}
-				if(branchOutfw != null){
-					branchOutfw.close();
+				if(dfr.sheetOutfw != null){
+					dfr.sheetOutfw.close();
 				}
 				if(salesBr != null){
 					salesBr.close();
-				}
-				if(commodBr != null){
-					commodBr.close();
-				}
-				if(commodOutpw != null){
-					commodOutpw.close();
-				}
-				if(commodOutbw != null){
-					commodOutbw.close();
-				}
-				if(commodOutfw != null){
-					commodOutfw.close();
 				}
 			}
 		}catch(Exception e){

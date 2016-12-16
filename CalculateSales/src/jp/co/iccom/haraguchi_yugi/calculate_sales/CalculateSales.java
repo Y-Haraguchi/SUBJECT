@@ -166,7 +166,6 @@ public class CalculateSales {
 			//--------------------------------------------------------------------------------
 
 			//商品定義ファイルを読み込むためメソッドを呼び出し
-			dfr.definFilesReader(args[0], "commodity.lst", "商品", "^\\w{8}$", defineCoMap, coSalesMap);
 			if(!dfr.definFilesReader(args[0], "commodity.lst", "商品", "^\\w{8}$", defineCoMap, coSalesMap)){
 				return;
 			}

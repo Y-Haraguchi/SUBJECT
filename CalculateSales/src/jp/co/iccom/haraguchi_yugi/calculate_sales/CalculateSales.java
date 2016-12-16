@@ -80,7 +80,6 @@ public class CalculateSales {
 				return false;
 			}
 		}
-
 		//処理が成功したらメインにtureを戻す
 		return true;
 	}
@@ -159,10 +158,8 @@ public class CalculateSales {
 				return;
 			}
 			//支店定義ファイルを読み込むためメソッドを呼び出し
-			dfr.definFilesReader(args[0], "branch.lst", "支店", "^\\d{3}$", defineBrMap, brSalesMap);
 			if(!dfr.definFilesReader(args[0], "branch.lst", "支店", "^\\d{3}$", defineBrMap, brSalesMap)){
-				System.out.println("予期せぬエラーが発生しました");
-					return;
+				return;
 			}
 			//---------------------------------------------------------------------------------
 			//商品定義ファイルの読み込み及び保持
@@ -171,7 +168,6 @@ public class CalculateSales {
 			//商品定義ファイルを読み込むためメソッドを呼び出し
 			dfr.definFilesReader(args[0], "commodity.lst", "商品", "^\\w{8}$", defineCoMap, coSalesMap);
 			if(!dfr.definFilesReader(args[0], "commodity.lst", "商品", "^\\w{8}$", defineCoMap, coSalesMap)){
-				System.out.println("予期せぬエラーが発生しました");
 				return;
 			}
 
@@ -362,16 +358,12 @@ public class CalculateSales {
 			//---------------------------------------------------------------------------------
 
 				//支店集計別ファイルを出力するメソッドを呼び出し
-				dfr.spreadSheetWriter(args[0], "branch.out", branchSortEntries, defineBrMap);
 				if(!dfr.spreadSheetWriter(args[0], "branch.out", branchSortEntries, defineBrMap)){
-					System.out.println("予期せぬエラーが発生しました");
 					return;
 				}
 
 				//商品集計別ファイルを出力するメソッドを呼び出し
-				dfr.spreadSheetWriter(args[0], "commodity.out", commodSortEntries, defineCoMap);
 				if(!dfr.spreadSheetWriter(args[0], "commodity.out", commodSortEntries, defineCoMap)){
-					System.out.println("予期せぬエラーが発生しました");
 					return;
 				}
 

@@ -140,7 +140,7 @@ public class CalculateSales {
 
 	public static void main(String[] args) {
 		try{
-			//読み込みメソッドを使うためのインスタンスの生成
+			//入出力メソッドを使うためのインスタンスの生成
 			CalculateSales dfr = new CalculateSales();
 
 			//各マップを生成
@@ -160,7 +160,8 @@ public class CalculateSales {
 			}
 			//支店定義ファイルを読み込むためメソッドを呼び出し
 			dfr.definFilesReader(args[0], "branch.lst", "支店", "^\\d{3}$", defineBrMap, brSalesMap);
-			if(!dfr.definFilesReader(args[0], "branch.lst", "支店", "^\\d{3}$", defineBrMap, brSalesMap)){					System.out.println("予期せぬエラーが発生しました");
+			if(!dfr.definFilesReader(args[0], "branch.lst", "支店", "^\\d{3}$", defineBrMap, brSalesMap)){
+				System.out.println("予期せぬエラーが発生しました");
 					return;
 			}
 			//---------------------------------------------------------------------------------
@@ -310,7 +311,6 @@ public class CalculateSales {
 				}
 
 			}catch(NumberFormatException e){
-				e.printStackTrace();
 				System.out.println("予期せぬエラーが発生しました");
 				return;
 			}catch(FileNotFoundException e){

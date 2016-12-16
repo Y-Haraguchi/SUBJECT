@@ -19,9 +19,9 @@ import java.util.Map.Entry;
 public class CalculateSales {
 
 	//読み込み処理
-	File defineFile = null;
-	FileReader defineFr = null;
-	BufferedReader defineBr = null;
+	File file = null;
+	FileReader fr = null;
+	BufferedReader br = null;
 
 	//支店定義ファイル内データをMapに値を保持するためのHashMapを生成
 	static Map<String,String> defineBrMap = null;
@@ -35,54 +35,71 @@ public class CalculateSales {
 	String dfineFileLine;
 
 	//定義ファイル入力メソッド
-	Boolean DefinFilesReader(String args, String filePath, String fileType, String regex,
-			Map<String, String> dfMap, Map<String, Long> saMap) throws IOException{
+	Boolean definFilesReader(String args, String filePath, String fileType, String regex,
+			Map<String, String> defineMap, Map<String, Long> salesMap){
+		try {
+			//引数からファイルパスを受け取る
+			file = new File(args, filePath);
 
-		//引数からファイルパスを受け取る
-		defineFile = new File(args, filePath);
-
-		//エラーチェック→ディレクトリを見に行った際に「branch.lst」がなかったら処理を終了させる
-		if(!defineFile.isFile() || !defineFile.exists()){
-			System.out.println(fileType + "定義ファイルが存在しません");
-			return false;
-		}
-		//ここにはif文で例外を投げる処理を入れる
-
-		//ファイルの読み込み
-		defineFr = new FileReader(defineFile);
-		defineBr  = new BufferedReader(defineFr);
-
-		while((dfineFileLine = defineBr.readLine()) != null){
-			String[] strLine = dfineFileLine.split(",", 0);
-			//エラーチェック→ファイルフォーマットが不正か
-			if(!(strLine.length == 2) || !(strLine[0].matches(regex))){
-				System.out.println(fileType + "定義ファイルのフォーマットが不正です");
+			//エラーチェック→ディレクトリを見に行った際に「branch.lst」がなかったら処理を終了させる
+			if(!file.isFile() || !file.exists()){
+				System.out.println(fileType + "定義ファイルが存在しません");
 				return false;
 			}
-			//定義ファイル内のデータをセット
-			dfMap.put(strLine[0], strLine[1]);
-			//集計に使用する値の初期化
-			saMap.put(strLine[0], (long)0);
+
+			//ファイルの読み込み
+			fr = new FileReader(file);
+			br  = new BufferedReader(fr);
+
+
+			while((dfineFileLine = br.readLine()) != null){
+				String[] strLine = dfineFileLine.split(",", 0);
+				//エラーチェック→ファイルフォーマットが不正か
+				if(!(strLine.length == 2) || !(strLine[0].matches(regex))){
+					System.out.println(fileType + "定義ファイルのフォーマットが不正です");
+					return false;
+				}
+				//定義ファイル内のデータをセット
+				defineMap.put(strLine[0], strLine[1]);
+				//集計に使用する値の初期化
+				salesMap.put(strLine[0], (long)0);
+			}
+		}catch(FileNotFoundException e){
+			System.out.println("予期せぬエラーが発生しました");
+			return false;
+		}catch(IOException e){
+			System.out.println("予期せぬエラーが発生しました");
+			return false;
+		}finally{
+			try{
+				if(br != null){
+					br.close();
+				}
+			}catch(IOException e){
+				System.out.println("予期せぬエラーが発生しました");
+				return false;
+			}
 		}
+
 		//処理が成功したらメインにtureを戻す
 		return true;
 	}
 
 	//集計表ファイル出力メソッド
-	Boolean SpreadSheetWriter(String args, String filePath,
-			List<Entry<String, Long>> sortEntries, Map<String, String> dfineMap)throws IOException{
+	Boolean spreadSheetWriter(String args, String filePath,
+			List<Entry<String, Long>> sortEntries, Map<String, String> dfineMap){
 
-		File sheetOutfile = new File(args, filePath);
-		FileWriter sheetOutfw = new FileWriter(sheetOutfile);
-		BufferedWriter sheetOutbw = new BufferedWriter(sheetOutfw);
-		PrintWriter sheetOutpw = new PrintWriter(sheetOutbw);
+		File file = null;
+		FileWriter fw = null;
+		BufferedWriter bw = null;
+		PrintWriter pw = null;
 
 		try{
-			//書き込み先のファイルが存在しなかったら処理を終了
-			if(!sheetOutfile.isFile()){
-				System.out.println("予期せぬエラーが発生しました");
-				return false;
-			}
+			file = new File(args, filePath);
+			fw = new FileWriter(file);
+			bw = new BufferedWriter(fw);
+			pw = new PrintWriter(bw);
+
 			//Mapで保持されている支店関係のデータをファイルに書き込み
 			for(Entry<String, Long> sortEnMap : sortEntries) {
 				//書き込むデータが空でないならば書き込み処理を行う
@@ -90,13 +107,32 @@ public class CalculateSales {
 					System.out.println("予期せぬエラーが発生しました");
 					return false;
 				}
-				sheetOutpw.println(sortEnMap.getKey() + "," + dfineMap.get(sortEnMap.getKey()) + "," + sortEnMap.getValue());
+				pw.println(sortEnMap.getKey() + "," + dfineMap.get(sortEnMap.getKey()) + "," + sortEnMap.getValue());
 			}
 
+		}catch(IOException e){
+			System.out.println("予期せぬエラーが発生しました");
+			return false;
 		}finally{
-			sheetOutpw.close();
-			sheetOutbw.close();
-			sheetOutfw.close();
+			if(pw != null){
+				pw.close();
+			}
+			try {
+				if(br != null){
+					br.close();
+				}
+			} catch (IOException e) {
+				System.out.println("予期せぬエラーが発生しました");
+				return false;
+			}
+			try {
+				if(fw != null){
+					fw.close();
+				}
+			} catch (IOException e) {
+				System.out.println("予期せぬエラーが発生しました");
+				return false;
+			}
 		}
 		return true;
 
@@ -122,56 +158,22 @@ public class CalculateSales {
 				System.out.println("予期せぬエラーが発生しました");
 				return;
 			}
-			try{
-				//支店定義ファイルを読み込むためメソッドを呼び出し
-				dfr.DefinFilesReader(args[0], "branch.lst", "支店", "^\\d{3}$", defineBrMap, brSalesMap);
-				if(!dfr.DefinFilesReader(args[0], "branch.lst", "支店", "^\\d{3}$", defineBrMap, brSalesMap)){
-					System.out.println("予期せぬエラーが発生しました");
+			//支店定義ファイルを読み込むためメソッドを呼び出し
+			dfr.definFilesReader(args[0], "branch.lst", "支店", "^\\d{3}$", defineBrMap, brSalesMap);
+			if(!dfr.definFilesReader(args[0], "branch.lst", "支店", "^\\d{3}$", defineBrMap, brSalesMap)){					System.out.println("予期せぬエラーが発生しました");
 					return;
-				}
-
-			}catch(FileNotFoundException e){
-				System.out.println("予期せぬエラーが発生しました");
-				return;
-			}catch(IOException e){
-				System.out.println("予期せぬエラーが発生しました");
-				return;
-			}finally{
-				try{
-					if(dfr.defineBr != null){
-						dfr.defineBr.close();
-					}
-				}catch(IOException e){
-					System.out.println("予期せぬエラーが発生しました");
-					return;
-				}
 			}
 			//---------------------------------------------------------------------------------
 			//商品定義ファイルの読み込み及び保持
 			//--------------------------------------------------------------------------------
-			try{
-				//商品定義ファイルを読み込むためメソッドを呼び出し
-				dfr.DefinFilesReader(args[0], "commodity.lst", "商品", "^\\w{8}$", defineCoMap, coSalesMap);
-				if(!dfr.DefinFilesReader(args[0], "commodity.lst", "商品", "^\\w{8}$", defineCoMap, coSalesMap)){
-					System.out.println("予期せぬエラーが発生しました");
-					return;
-				}
 
-			}catch(FileNotFoundException e){
+			//商品定義ファイルを読み込むためメソッドを呼び出し
+			dfr.definFilesReader(args[0], "commodity.lst", "商品", "^\\w{8}$", defineCoMap, coSalesMap);
+			if(!dfr.definFilesReader(args[0], "commodity.lst", "商品", "^\\w{8}$", defineCoMap, coSalesMap)){
 				System.out.println("予期せぬエラーが発生しました");
 				return;
-			}catch(IOException e){
-				System.out.println("予期せぬエラーが発生しました");
-				return;
-			}finally{
-				if(dfr.defineBr != null){
-					dfr.defineBr.close();
-				}
-				if(dfr.defineBr != null){
-					dfr.defineBr.close();
-				}
-
 			}
+
 			//---------------------------------------------------------------------------------
 			//売上ファイルの連番チェック
 			//---------------------------------------------------------------------------------
@@ -244,10 +246,10 @@ public class CalculateSales {
 				for(int i = 0 ; i < fileNameList.size() ; i++){
 
 					//ファイルパス指定して1ファイルずつ読み込み
-					File salesFile = new File(args[0],fileList[i].getName());
+					File file = new File(args[0],fileNameList.get(i));
 
 					//売上ファイルの読み込み処理
-					salesFr = new FileReader(salesFile);
+					salesFr = new FileReader(file);
 					salesBr = new BufferedReader(salesFr);
 
 					//1ファイル内のデータをすべてaddしていく
@@ -359,29 +361,20 @@ public class CalculateSales {
 			//集計結果を出力
 			//---------------------------------------------------------------------------------
 
-			try{
-
 				//支店集計別ファイルを出力するメソッドを呼び出し
-				dfr.SpreadSheetWriter(args[0], "branch.out", branchSortEntries, defineBrMap);
-				if(!dfr.SpreadSheetWriter(args[0], "branch.out", branchSortEntries, defineBrMap)){
+				dfr.spreadSheetWriter(args[0], "branch.out", branchSortEntries, defineBrMap);
+				if(!dfr.spreadSheetWriter(args[0], "branch.out", branchSortEntries, defineBrMap)){
 					System.out.println("予期せぬエラーが発生しました");
 					return;
 				}
 
 				//商品集計別ファイルを出力するメソッドを呼び出し
-				dfr.SpreadSheetWriter(args[0], "commodity.out", commodSortEntries, defineCoMap);
-				if(!dfr.SpreadSheetWriter(args[0], "commodity.out", commodSortEntries, defineCoMap)){
+				dfr.spreadSheetWriter(args[0], "commodity.out", commodSortEntries, defineCoMap);
+				if(!dfr.spreadSheetWriter(args[0], "commodity.out", commodSortEntries, defineCoMap)){
 					System.out.println("予期せぬエラーが発生しました");
 					return;
 				}
 
-			}catch(FileNotFoundException e){
-				System.out.println("予期せぬエラーが発生しました");
-				return;
-			}catch(IOException e){
-				System.out.println("予期せぬエラーが発生しました");
-				return;
-			}
 		}catch(Exception e){
 			System.out.println("予期せぬエラーが発生しました");
 			return;
